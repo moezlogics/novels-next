@@ -8,7 +8,8 @@
     "start": "next start",
     "migrate": "tsx scripts/migrate.ts",
     "create-admin": "tsx scripts/create-admin.ts",
-    "icons": "node tools/gen_icons.js"
+    "icons": "node tools/gen_icons.js",
+    "prebuild": "node scripts/icons-site.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

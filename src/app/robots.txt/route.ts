@@ -23,7 +23,6 @@ export async function GET() {
     (s.robots_extra || "").trim(),
     "",
     `Sitemap: ${base}/sitemap.xml`,
-    `LLMs: ${base}/llms.txt`,
     "",
   ].filter((l, i, a) => l !== "" || a[i - 1] !== "");
   return new Response(lines.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex", "Cache-Control": "public, max-age=3600" } });

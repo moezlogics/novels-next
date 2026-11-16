@@ -37,7 +37,7 @@ export function CategoryCarousel({ cats }: { cats: { id: number; name: string; s
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={c.image ? thumbUrl(c.image, 200) : letterImage(c.name)}
-                alt={c.name}
+                alt={`${c.name} novels`}
                 style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
                 loading={i >= 6 ? "lazy" : "eager"}
                 decoding="async"

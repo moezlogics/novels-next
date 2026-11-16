@@ -82,6 +82,7 @@ export default async function ArchiveView({ kind, id, search, page = 1 }: { kind
       </div>
 
       <div className="global-container py-10">
+        <h2 className="sr-only">{heading} novels</h2>
         <div id="posts-container" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-card-gap">
           {items.length ? (
             items.map((p, i) => <BookCard key={p.id} post={p} coverClass="mb-4" small={false} eager={i < 2} />)

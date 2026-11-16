@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   experimental: {
     serverActions: { bodySizeLimit: "60mb" },
+    // CSS goes inside the HTML: no extra round trips before the first paint (slow mobile networks)
+    inlineCss: false,
   },
   async headers() {
     const security = [

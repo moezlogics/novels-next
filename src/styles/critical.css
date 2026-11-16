@@ -140,3 +140,10 @@ body{overscroll-behavior-x:none}
 img{-webkit-user-drag:none}
 
 .kn-pages{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:22px 0 0}.kn-pages a,.kn-pages b{min-width:38px;height:38px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-weight:700;font-size:.85rem;text-decoration:none}.kn-pages b{background:var(--theme-secondary,#0e7490);border-color:var(--theme-secondary,#0e7490);color:#fff}.kn-pages .gap{align-self:center;color:#94a3b8}
+
+/* accessibility: readable contrast (WCAG AA) while keeping the brand colour */
+.site-footer.sf{background-color:color-mix(in srgb,var(--theme-primary) 66%,#000)!important}
+.sf-desc,.sf-copy,.sf-nav-list a,.site-footer.sf a:not(.sf-social):not(.sf-nav-heading){color:rgba(255,255,255,.9)!important}
+.sp-share-label,.sp-comment-date{color:#5b6475!important}
+.btn-brand{background-color:color-mix(in srgb,var(--theme-secondary) 80%,#000)!important;color:#fff!important}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

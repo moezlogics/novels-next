@@ -14,7 +14,7 @@ function RelCard({ p }: { p: { id: number; title: string; slug: string; image: s
     <Link className="sp-rel-card" href={`/${p.slug}/`}>
       <span className="sp-rel-cover">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.image ? thumbUrl(p.image, 200) : placeholderCover(p.title)} alt={p.title} loading="lazy" decoding="async" width={120} height={180} />
+        <img src={p.image ? thumbUrl(p.image, 200) : placeholderCover(p.title)} alt={`${p.title} novel cover`} loading="lazy" decoding="async" width={120} height={180} />
       </span>
       <span className="sp-rel-title">{p.title}</span>
     </Link>

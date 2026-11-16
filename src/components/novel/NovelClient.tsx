@@ -23,21 +23,26 @@ export function ReadButton({ pid, driveId, parts = [], title, totalPages, cover,
       readerCommand("open", spec());
       return;
     }
-    // Most visitors of a novel page read it: start Google's viewer right after the page
-    // appears, so "Read" opens instantly. Skipped on data-saver / 2G connections.
+    // Most visitors of a novel page read it, so Google's viewer is loaded early — but only
+    // after the page is on screen and the visitor starts using it (first touch, scroll or
+    // key), so its heavy scripts never slow the novel page itself. Touching "Read" also
+    // starts it. Skipped on data-saver / 2G connections.
     if (!preload || !canPreload()) return;
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    if (w.requestIdleCallback) {
-      const id = w.requestIdleCallback(warm, { timeout: 700 });
-      return () => w.cancelIdleCallback?.(id);
-    }
-    const t = setTimeout(warm, 300);
-    return () => clearTimeout(t);
+    const evs = ["pointerdown", "touchstart", "scroll", "keydown", "mousemove"] as const;
+    let fired = false;
+    const go = () => {
+      if (fired) return;
+      fired = true;
+      evs.forEach((e) => window.removeEventListener(e, go));
+      setTimeout(warm, 400);
+    };
+    evs.forEach((e) => window.addEventListener(e, go, { passive: true, once: true }));
+    return () => evs.forEach((e) => window.removeEventListener(e, go));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pid, preload]);
 
   return (
-    <button type="button" className="sp-btn sp-btn-read" aria-label={`Read ${title} online`} onPointerEnter={warm} onTouchStart={warm} onFocus={warm} onClick={() => readerCommand("open", spec())}>
+    <button type="button" className="sp-btn sp-btn-read" aria-label={`Read Online Free: ${title}`} onPointerEnter={warm} onTouchStart={warm} onFocus={warm} onClick={() => readerCommand("open", spec())}>
       <Ico name="read" /> Read Online Free
     </button>
   );
