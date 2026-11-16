@@ -15,6 +15,7 @@ export interface FeedPost {
   author_avatar: string;
   likes_count: number;
   comments_count: number;
+  views: number;
   user_liked: boolean;
 }
 
@@ -49,6 +50,7 @@ export async function hydratePosts(posts: CommunityPost[], viewerId: number | nu
       author_avatar: pic,
       likes_count: lm.get(p._id) || 0,
       comments_count: ccm.get(p._id) || 0,
+      views: p.views || 0,
       user_liked: liked.has(p._id),
     };
   });

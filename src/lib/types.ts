@@ -14,7 +14,7 @@ export interface Post {
   image: string;
   read_online_url: string;
   pdf_size?: number; // bytes of the Drive PDF (filled automatically)
-  read_parts?: string[]; // extra Drive links: Part 2, Part 3… (big novels split into smaller PDFs)
+  episodes?: Episode[]; // novels published in episodes / parts
   download_url: string;
   file_size: string;
   file_type: string;
@@ -28,6 +28,16 @@ export interface Post {
   views?: number;
   reads?: number;
   downloads?: number;
+}
+
+export interface EpisodeLink {
+  url: string; // Google Drive (opens in our reader) or any website (nofollow)
+  label?: string;
+}
+
+export interface Episode {
+  title: string;
+  links: EpisodeLink[];
 }
 
 export interface Category {
@@ -115,6 +125,7 @@ export interface CommunityPost {
   created_at: Date;
   likes_count?: number;
   comments_count?: number;
+  views?: number; // times the post was seen in the feed by other people
 }
 
 export interface CommunityLike {
@@ -403,6 +414,7 @@ export interface Settings {
   pinterest_verification?: string;
   facebook_domain_verification?: string;
 
+  whatsapp_channel_url?: string;
   twitter_url?: string;
   pinterest_url?: string;
   telegram_url?: string;

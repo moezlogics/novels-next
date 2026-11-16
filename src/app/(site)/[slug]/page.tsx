@@ -5,6 +5,7 @@ import { findRedirect } from "@/lib/redirects";
 import { fillTitle, getSettings, siteUrl } from "@/lib/settings";
 import { getArchive, getCategory, getComments, getNovel, getPage, getWriter, resolveSlug } from "@/lib/data";
 import { buildMeta, ogImage } from "@/lib/seo";
+import { termDescription, termTitle } from "@/lib/termSeo";
 import { excerpt } from "@/lib/utils";
 import NovelView from "@/components/novel/NovelView";
 import ArchiveView from "@/components/site/ArchiveView";
@@ -40,9 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (r.kind === "category") {
     const c = await getCategory(r.id);
     if (!c) return {};
+    const { total } = await getArchive({ categoryId: c.id }, 1, 12);
     return buildMeta(s, base, {
-      title: c.meta_title || fillTitle(s, s.seo_tpl_category, { title: c.name }),
-      description: c.meta_description || `Explore all novels under category ${c.name}`,
+      title: termTitle(s, "category", c.name, c.meta_title),
+      description: termDescription("category", c.name, total, c.meta_description),
       path: `/${c.slug}/`,
       image: c.image ? ogImage(c.image, base) : undefined,
     });
@@ -52,8 +54,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!w) return {};
     const { total } = await getArchive({ writerId: w.id }, 1, 12);
     return buildMeta(s, base, {
-      title: w.meta_title || fillTitle(s, s.seo_tpl_writer, { title: w.name }),
-      description: (w.meta_description || `Explore all novels written by ${w.name}`).replace("{count}", String(total)).replace(/\b1 (Urdu )?novels\b/i, "1 $1novel"),
+      title: termTitle(s, "writer", w.name, w.meta_title),
+      description: termDescription("writer", w.name, total, w.meta_description),
       path: `/${w.slug}/`,
       image: w.profile_pic ? ogImage(w.profile_pic, base) : undefined,
     });

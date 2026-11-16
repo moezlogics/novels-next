@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { saveTerm } from "@/app/newlogin/(panel)/taxonomy-actions";
 import { Flash, ImageField, RichText, SeoBox, Submit } from "./Fields";
-import { siteUrl } from "@/lib/settings";
+import { getSettings, siteUrl } from "@/lib/settings";
+import { getArchive } from "@/lib/data";
+import { TERM_TEMPLATES, termDescription, termTitle } from "@/lib/termSeo";
 
-export default function TermEdit({
+export default async function TermEdit({
   kind,
   term,
   ok,
@@ -14,6 +16,15 @@ export default function TermEdit({
   ok?: string;
   err?: string;
 }) {
+  // live novel count + what Google gets when the SEO fields are left empty
+  const k = kind === "writers" ? "writer" : "category";
+  const seo =
+    kind === "series"
+      ? null
+      : await (async () => {
+          const { total } = await getArchive(k === "writer" ? { writerId: term.id } : { categoryId: term.id }, 1, 12);
+          return { total, title: termTitle(await getSettings(), k, term.name), desc: termDescription(k, term.name, total) };
+        })();
   return (
     <>
       <Flash ok={ok} err={err} />
@@ -51,8 +62,19 @@ export default function TermEdit({
                 <h3>
                   <i className="fa-solid fa-magnifying-glass"></i> SEO
                 </h3>
-                <SeoBox title={term.meta_title} description={term.meta_description} url={`${siteUrl()}/${term.slug}/`} fallbackTitle={term.name} />
-                {kind === "writers" ? <p className="a-muted" style={{ fontSize: ".78rem", marginBottom: 0 }}>Tip: use {"{count}"} in the description to show the number of novels.</p> : null}
+                <SeoBox
+                  title={term.meta_title}
+                  description={term.meta_description}
+                  url={`${siteUrl()}/${term.slug}/`}
+                  fallbackTitle={seo?.title || term.name}
+                  autoDescription={seo?.desc}
+                  templates={TERM_TEMPLATES[k]}
+                  count={seo?.total}
+                  name={term.name.replace(/\s+novels?$/i, "")}
+                />
+                <p className="a-muted" style={{ fontSize: ".78rem", marginBottom: 0 }}>
+                  Empty fields are filled automatically (currently {seo?.total ?? 0} novels). The count updates by itself when a new novel is added.
+                </p>
               </div>
             ) : null}
           </div>

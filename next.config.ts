@@ -27,7 +27,12 @@ const nextConfig: NextConfig = {
           "frame-src 'self' https://drive.google.com https://docs.google.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com https://www.facebook.com https://www.tiktok.com https://www.instagram.com https://*.doubleclick.net https://*.googlesyndication.com",
       },
     ];
-    return [{ source: "/:path*", headers: security }];
+    return [
+      { source: "/:path*", headers: security },
+      // the community is for members, never for search engines
+      { source: "/community/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      { source: "/community", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+    ];
   },
 };
 

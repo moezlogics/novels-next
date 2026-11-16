@@ -15,6 +15,14 @@ const paths: Record<string, React.ReactNode> = {
     </>
   ),
   bookmark: <path d="M6 3h12v18l-6-4-6 4V3z" />,
+  people: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20v-1.5A4.5 4.5 0 0 1 7 14h4a4.5 4.5 0 0 1 4.5 4.5V20" />
+      <circle cx="17" cy="9" r="2.6" />
+      <path d="M17.5 14H18a3.5 3.5 0 0 1 3.5 3.5V20" />
+    </>
+  ),
   grid: (
     <>
       <rect x="3" y="3" width="7" height="7" rx="1.5" />

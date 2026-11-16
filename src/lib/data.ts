@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { col } from "./db";
+import { extractDriveId } from "./utils";
 import type { Post, PostCard } from "./types";
 
 const TAGS = { tags: ["content"], revalidate: 3600 };
@@ -124,7 +125,7 @@ export interface NovelDetail {
   description: string;
   image: string;
   read_online_url: string;
-  read_parts: string[];
+  episodes: { title: string; links: { url: string; label: string; driveId: string }[] }[];
   pdf_size: number;
   download_url: string;
   file_size: string;
@@ -178,7 +179,9 @@ export const getNovel = unstable_cache(
       description: p.description || "",
       image: p.image || "",
       read_online_url: p.read_online_url || "",
-      read_parts: (p.read_parts || []).filter(Boolean),
+      episodes: (p.episodes || [])
+        .map((e, i) => ({ title: e.title || `Episode ${i + 1}`, links: (e.links || []).filter((l) => l?.url).map((l) => ({ url: l.url, label: l.label || "", driveId: extractDriveId(l.url) || "" })) }))
+        .filter((e) => e.links.length),
       pdf_size: p.pdf_size || 0,
       download_url: p.download_url || "",
       file_size: p.file_size || "",

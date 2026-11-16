@@ -21,7 +21,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
           <Header />
           <main id="app-container">{children}</main>
           <Footer />
-          <MobileNav />
+          <MobileNav community={!s.community_coming_soon} shop={!s.shop_coming_soon} />
           {/* the novel reader stays alive while the visitor moves between pages */}
           <ReaderHost />
         </>

@@ -1,8 +1,9 @@
 import "@/styles/single.css";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fillTitle, getSettings, siteUrl } from "@/lib/settings";
+import { getSettings, siteUrl } from "@/lib/settings";
 import { getArchive, getCategory, getWriter, resolveSlug } from "@/lib/data";
+import { termDescription, termTitle } from "@/lib/termSeo";
 import { buildMeta, ogImage } from "@/lib/seo";
 import ArchiveView from "@/components/site/ArchiveView";
 
@@ -39,16 +40,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (x.r.kind === "category") {
     const c = (await getCategory(x.r.id))!;
     return buildMeta(s, base, {
-      title: (c.meta_title || fillTitle(s, s.seo_tpl_category, { title: c.name })) + suffix,
-      description: `Page ${x.n}: ${c.meta_description || `Explore all novels under category ${c.name}`}`,
+      title: termTitle(s, "category", c.name, c.meta_title) + suffix,
+      description: `Page ${x.n}: ${termDescription("category", c.name, x.total, c.meta_description)}`,
       path: `/${c.slug}/?page=${x.n}`,
       image: c.image ? ogImage(c.image, base) : undefined,
     });
   }
   const w = (await getWriter(x.r.id))!;
   return buildMeta(s, base, {
-    title: (w.meta_title || fillTitle(s, s.seo_tpl_writer, { title: w.name })) + suffix,
-    description: `Page ${x.n}: ${(w.meta_description || `Explore all novels written by ${w.name}`).replace("{count}", String(x.total))}`,
+    title: termTitle(s, "writer", w.name, w.meta_title) + suffix,
+    description: `Page ${x.n}: ${termDescription("writer", w.name, x.total, w.meta_description)}`,
     path: `/${w.slug}/?page=${x.n}`,
     image: w.profile_pic ? ogImage(w.profile_pic, base) : undefined,
   });

@@ -7,9 +7,17 @@
  */
 
 export type DlInfo = { apiKey?: string; size?: number; site?: string };
+export interface ReaderItem {
+  label: string;
+  driveId: string;
+}
 export interface ReaderSpec {
+  /** One reader per novel + kind ("main" = complete novel, "ep" = episodes). */
+  key: string;
   pid: number;
-  driveIds: string[];
+  items: ReaderItem[];
+  /** Which item to show when opening (episode index). */
+  start?: number;
   title: string;
   cover: string;
   totalPages: number;

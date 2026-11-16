@@ -43,12 +43,12 @@ async function act(fd: FormData) {
 export default async function Tools({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string; watch?: string }> }) {
   await requireAdmin(true);
   const sp = await searchParams;
-  const rows = await (await col.posts()).find({}, { projection: { title: 1, read_online_url: 1, pdf_size: 1, status: 1, pages: 1, read_parts: 1 } }).sort({ _id: -1 }).toArray();
+  const rows = await (await col.posts()).find({}, { projection: { title: 1, read_online_url: 1, pdf_size: 1, status: 1, pages: 1, episodes: 1 } }).sort({ _id: -1 }).toArray();
   const withPdf = rows.filter((r) => extractDriveId(r.read_online_url));
   const ok = withPdf.filter((r) => r.pdf_size);
   const broken = withPdf.filter((r) => r.pdf_size === 0);
   // Google's viewer fails on very big PDFs (page 1 shows, then "Could not preview the file")
-  const tooBig = (r: (typeof rows)[number]) => !(r.read_parts || []).length && ((r.pages || 0) > 2500 || (r.pdf_size || 0) > 25 * 1048576);
+  const tooBig = (r: (typeof rows)[number]) => !(r.episodes || []).length && ((r.pages || 0) > 2500 || (r.pdf_size || 0) > 25 * 1048576);
   const big = withPdf.filter(tooBig);
   const check = g._knCheck;
   return (

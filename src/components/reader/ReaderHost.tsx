@@ -18,21 +18,25 @@ const KEEP = 2;
  */
 export default function ReaderHost() {
   const [list, setList] = useState<ReaderSpec[]>([]);
-  const [active, setActive] = useState<number | null>(null);
-  const used = useRef(new Map<number, number>());
+  const [active, setActive] = useState<string | null>(null);
+  const [asked, setAsked] = useState<{ key: string; i: number; n: number } | null>(null);
+  const used = useRef(new Map<string, number>());
 
   const handle = useCallback((c: ReaderCommand) => {
-    used.current.set(c.spec.pid, Date.now());
+    used.current.set(c.spec.key, Date.now());
     setList((l) => {
-      if (l.some((x) => x.pid === c.spec.pid)) return l; // keep the same frame (never move it: moving reloads it)
+      if (l.some((x) => x.key === c.spec.key)) return l; // keep the same frame (never move it: moving reloads it)
       let next = [...l, c.spec];
       while (next.length > KEEP) {
-        const oldest = next.reduce((a, b) => ((used.current.get(a.pid) || 0) <= (used.current.get(b.pid) || 0) ? a : b));
+        const oldest = next.reduce((a, b) => ((used.current.get(a.key) || 0) <= (used.current.get(b.key) || 0) ? a : b));
         next = next.filter((x) => x !== oldest);
       }
       return next;
     });
-    if (c.type === "open") setActive(c.spec.pid);
+    if (c.type === "open") {
+      setActive(c.spec.key);
+      setAsked({ key: c.spec.key, i: c.spec.start || 0, n: Date.now() });
+    }
   }, []);
 
   useEffect(() => {
@@ -46,18 +50,19 @@ export default function ReaderHost() {
     <>
       {list.map((r) => (
         <DriveReader
-          key={r.pid}
+          key={r.key}
           pid={r.pid}
-          driveIds={r.driveIds}
+          items={r.items}
+          requested={asked && asked.key === r.key ? asked : null}
           title={r.title}
           cover={r.cover}
           totalPages={r.totalPages}
-          visible={active === r.pid}
-          onClose={() => setActive((a) => (a === r.pid ? null : a))}
+          visible={active === r.key}
+          onClose={() => setActive((a) => (a === r.key ? null : a))}
           onDownload={(id) => {
-            const n = r.driveIds.indexOf(id);
-            const multi = r.driveIds.length > 1;
-            void downloadDrive({ driveId: id, size: n === 0 && !multi ? r.dl?.size : 0, filename: pdfFilename(multi ? `${r.title} Part ${n + 1}` : r.title, r.dl?.site || "") });
+            const it = r.items.find((x) => x.driveId === id);
+            const multi = r.items.length > 1;
+            void downloadDrive({ driveId: id, size: !multi ? r.dl?.size : 0, filename: pdfFilename(multi && it ? `${r.title} ${it.label}` : r.title, r.dl?.site || "") });
           }}
         />
       ))}

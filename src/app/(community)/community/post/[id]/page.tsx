@@ -20,7 +20,7 @@ async function load(id: number) {
 export async function generateMetadata({ params }: Props) {
   const post = await load(parseInt((await params).id, 10));
   if (!post) return { title: "Post not found" };
-  return { title: { absolute: `${post.author_name}: ${excerpt(post.content, 60)}` }, description: excerpt(post.content, 155), robots: "noindex, follow" };
+  return { title: { absolute: `${post.author_name}: ${excerpt(post.content, 60)}` }, description: excerpt(post.content, 155), robots: "noindex, nofollow" };
 }
 
 export default async function PostPage({ params }: Props) {

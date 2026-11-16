@@ -7,7 +7,8 @@ import { cleanDescription, extractDriveId, mediaUrl, placeholderCover, thumbUrl 
 import JsonLd from "../JsonLd";
 import Ico from "../Icons";
 import Comments from "./Comments";
-import { DownloadButton, NovelTracker, ReadButton } from "./NovelClient";
+import { DownloadButton, EpisodeList, NovelTracker, ReadButton } from "./NovelClient";
+import { WhatsAppGlyph } from "../site/WhatsAppFab";
 
 function RelCard({ p }: { p: { id: number; title: string; slug: string; image: string } }) {
   return (
@@ -94,10 +95,10 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
               ) : null}
             </div>
 
-            {n.read_online_url || n.download_url ? (
+            {n.read_online_url || n.download_url || s.whatsapp_channel_url ? (
               <div className="sp-actions-wrap">
                 {readId ? (
-                  <ReadButton pid={n.id} driveId={readId} parts={n.read_parts.map(extractDriveId).filter((x): x is string => !!x)} title={n.title} totalPages={n.pages || 0} cover={cover} dl={dl} preload={s.reader_preload !== false} />
+                  <ReadButton pid={n.id} driveId={readId} title={n.title} totalPages={n.pages || 0} cover={cover} dl={dl} preload={s.reader_preload !== false} />
                 ) : n.read_online_url ? (
                   <a href={n.read_online_url} target="_blank" rel="nofollow noopener noreferrer" className="sp-btn sp-btn-read">
                     <Ico name="read" /> Read Online Free
@@ -112,8 +113,14 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
                     </a>
                   )
                 ) : null}
+                {s.whatsapp_channel_url ? (
+                  <a href={s.whatsapp_channel_url} target="_blank" rel="noopener" className="sp-btn sp-btn-wa">
+                    <WhatsAppGlyph /> Join WhatsApp Channel
+                  </a>
+                ) : null}
               </div>
             ) : null}
+            {n.episodes.length ? <EpisodeList pid={n.id} title={n.title} cover={cover} episodes={n.episodes} dl={{ site: s.site_name }} downloads={s.download_enabled !== false} /> : null}
           </div>
         </div>
 

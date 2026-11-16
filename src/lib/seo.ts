@@ -50,7 +50,6 @@ export function buildMeta(s: Settings, base: string, raw: MetaInput): Metadata {
     robots,
     authors: m.author ? [{ name: m.author }] : undefined,
     alternates: { canonical: url },
-    icons: s.site_favicon ? { icon: mediaUrl(s.site_favicon), shortcut: mediaUrl(s.site_favicon) } : undefined,
     openGraph:
       m.type === "article"
         ? {
@@ -104,7 +103,7 @@ export function websiteSchema(s: Settings, base: string) {
 }
 
 export function orgSchema(s: Settings, base: string) {
-  const sameAs = [s.facebook_url, s.instagram_url, s.tiktok_url, s.youtube_url, s.twitter_url, s.pinterest_url, s.telegram_url].filter(Boolean);
+  const sameAs = [s.whatsapp_channel_url, s.facebook_url, s.instagram_url, s.tiktok_url, s.youtube_url, s.twitter_url, s.pinterest_url, s.telegram_url].filter(Boolean);
   const logo = ogImage(s.site_logo, base);
   return {
     "@context": "https://schema.org",

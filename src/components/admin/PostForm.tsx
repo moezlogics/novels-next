@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Post } from "@/lib/types";
 import { CategoryPicker, ConfirmButton, ImageField, RichText, SeoBox, SlugInput, Submit } from "./Fields";
 import DriveTools from "./DriveTools";
+import EpisodesEditor from "./EpisodesEditor";
 import { savePost, deletePost } from "@/app/newlogin/(panel)/posts/actions";
 import { siteUrl } from "@/lib/settings";
 
@@ -25,7 +26,7 @@ export default function PostForm({ post, cats, writers, series }: { post?: Post 
                 <label>Novel Title *</label>
                 <input type="text" name="title" defaultValue={p?.title} required placeholder="e.g. Jannat Ke Pattay" style={{ fontSize: "1.05rem", fontWeight: 700 }} />
               </div>
-              <SlugInput defaultValue={p?.slug} prefix={`${siteUrl().replace(/^https?:\/\//, "")}/`} />
+              <SlugInput withWriter defaultValue={p?.slug} prefix={`${siteUrl().replace(/^https?:\/\//, "")}/`} />
               <div className="a-field" style={{ marginBottom: 0 }}>
                 <label>Description</label>
                 <RichText name="description" defaultValue={p?.description || ""} />
@@ -39,20 +40,14 @@ export default function PostForm({ post, cats, writers, series }: { post?: Post 
               <div className="a-field">
                 <label>Read Online URL</label>
                 <input type="url" name="read_online_url" defaultValue={p?.read_online_url} placeholder="https://drive.google.com/file/d/…/view" />
-                <small>Paste the Google Drive share link (Anyone with the link → Viewer). This is Part 1 if the novel is split.</small>
+                <small>The complete novel (Google Drive share link, “Anyone with the link → Viewer”). Leave empty if the novel is only in episodes. Drive links open in our reader; any other link (Mega, MediaFire, own server…) opens directly with nofollow.</small>
               </div>
-              <div className="a-field">
-                <label>More parts (big novels)</label>
-                <textarea name="read_parts" rows={3} defaultValue={(p?.read_parts || []).join("\n")} placeholder={"https://drive.google.com/file/d/…  (Part 2)\nhttps://drive.google.com/file/d/…  (Part 3)"} style={{ fontSize: ".82rem" }} />
-                <small>
-                  Google&apos;s viewer often fails on very big PDFs (over ~25 MB or ~2,500 pages): page 1 shows, then &quot;Could not preview the file&quot;. Split such novels into PDFs of about 800 pages, put Part 1 above and the other parts here, one link per line. Readers get Part 1 / Part 2 buttons.
-                </small>
-              </div>
+              <EpisodesEditor initial={p?.episodes || []} />
               <label className="a-check" style={{ marginBottom: 12 }}>
                 <input type="checkbox" name="same_download" value="1" defaultChecked={!p || p.download_url === p.read_online_url} /> Download link is the same file
               </label>
-              <div className="a-field">
-                <label>Download URL (if different)</label>
+              <div className="a-field dl-diff">
+                <label>Download URL (different file)</label>
                 <input type="url" name="download_url" defaultValue={p?.download_url !== p?.read_online_url ? p?.download_url : ""} placeholder="https://drive.google.com/…" />
               </div>
               <div className="a-grid a-g3">
@@ -76,7 +71,7 @@ export default function PostForm({ post, cats, writers, series }: { post?: Post 
               <h3>
                 <i className="fa-solid fa-magnifying-glass"></i> SEO
               </h3>
-              <SeoBox title={p?.meta_title} description={p?.meta_description} url={`${siteUrl()}/${p?.slug || "novel-slug"}/`} fallbackTitle={p?.title} />
+              <SeoBox autoNovel={!p} title={p?.meta_title} description={p?.meta_description} url={`${siteUrl()}/${p?.slug || "novel-slug"}/`} fallbackTitle={p?.title} />
             </div>
           </div>
 

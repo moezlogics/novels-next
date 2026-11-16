@@ -141,6 +141,12 @@ export const SETTINGS_TABS: Tab[] = [
     icon: "fa-address-book",
     sections: [
       {
+        title: "WhatsApp Channel",
+        icon: "fa-whatsapp",
+        help: "Shown everywhere: a floating “Join Channel” button at the bottom right of every page, and a button next to Read / Download on every novel.",
+        fields: [{ k: "whatsapp_channel_url", label: "WhatsApp Channel link", type: "url", ph: "https://whatsapp.com/channel/…" }],
+      },
+      {
         title: "Contact",
         icon: "fa-envelope",
         fields: [

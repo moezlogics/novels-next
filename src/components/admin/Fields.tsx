@@ -299,9 +299,72 @@ export function ImageField({ name, current = "", label = "Image", wide = false, 
 }
 
 /** Meta title / description with counters + Google preview. */
-export function SeoBox({ title = "", description = "", url, fallbackTitle = "" }: { title?: string; description?: string; url: string; fallbackTitle?: string }) {
+const slugPart = (x: string) => x.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+
+/** Novel title and writer name as typed / chosen in the novel form. */
+function novelSource() {
+  const t = document.querySelector<HTMLInputElement>('input[name="title"]')?.value.trim() || "";
+  const nw = document.querySelector<HTMLInputElement>('input[name="new_writer"]')?.value.trim() || "";
+  const sel = document.querySelector<HTMLSelectElement>('select[name="writer_id"]');
+  const w = nw || (sel && sel.value ? sel.options[sel.selectedIndex].text.trim() : "");
+  return { t, w };
+}
+
+/** Calls `cb` whenever the title, writer select or new-writer box changes. */
+function useNovelSource(active: boolean, cb: (src: { t: string; w: string }) => void) {
+  const ref = useRef(cb);
+  ref.current = cb;
+  useEffect(() => {
+    if (!active) return;
+    const h = (e: Event) => {
+      const n = (e.target as HTMLInputElement | null)?.name;
+      if (n === "title" || n === "writer_id" || n === "new_writer") ref.current(novelSource());
+    };
+    document.addEventListener("input", h);
+    document.addEventListener("change", h);
+    return () => {
+      document.removeEventListener("input", h);
+      document.removeEventListener("change", h);
+    };
+  }, [active]);
+}
+
+/** "Azeel" + "Mahi Shah" → "Azeel Novel by Mahi Shah Complete PDF" */
+export function novelMetaTitle(t: string, w: string) {
+  if (!t) return "";
+  const base = /\bnovel$/i.test(t) ? t : `${t} Novel`;
+  return w ? `${base} by ${w} Complete PDF` : `${base} Complete PDF`;
+}
+
+export function SeoBox({
+  title = "",
+  description = "",
+  url,
+  fallbackTitle = "",
+  autoNovel = false,
+  autoDescription = "",
+  templates,
+  count,
+  name = "",
+}: {
+  title?: string;
+  description?: string;
+  url: string;
+  fallbackTitle?: string;
+  /** new novel: fill the meta title from title + writer until the admin edits it */
+  autoNovel?: boolean;
+  /** what Google gets when the description is left empty */
+  autoDescription?: string;
+  /** ready-made descriptions with {count} / {name} (writers & categories) */
+  templates?: string[];
+  count?: number;
+  name?: string;
+}) {
   const [t, setT] = useState(title);
   const [d, setD] = useState(description);
+  const [tTouched, setTTouched] = useState(!!title || !autoNovel);
+  useNovelSource(!tTouched, ({ t: nt, w }) => setT(novelMetaTitle(nt, w)));
+  const fill = (x: string) => (count === undefined ? x : x.replace(/\{count\}/gi, String(count)).replace(/\{name\}/gi, name));
   const col = (n: number, max: number) => (n > max ? "#f87171" : n > max * 0.85 ? "#fcd34d" : "#86efac");
   return (
     <>
@@ -309,18 +372,42 @@ export function SeoBox({ title = "", description = "", url, fallbackTitle = "" }
         <label>
           Meta Title <span style={{ float: "right", color: col(t.length, 60) }}>{t.length}/60</span>
         </label>
-        <input type="text" name="meta_title" value={t} onChange={(e) => setT(e.target.value)} placeholder={fallbackTitle || "Leave empty to use the title"} />
+        <input
+          type="text"
+          name="meta_title"
+          value={t}
+          onChange={(e) => {
+            setTTouched(true);
+            setT(e.target.value);
+          }} placeholder={fallbackTitle || "Leave empty to use the title"} />
       </div>
       <div className="a-field">
         <label>
           Meta Description <span style={{ float: "right", color: col(d.length, 160) }}>{d.length}/160</span>
         </label>
-        <textarea name="meta_description" rows={3} value={d} onChange={(e) => setD(e.target.value)} placeholder="Leave empty to auto-generate from the description" />
+        <textarea name="meta_description" rows={3} value={d} onChange={(e) => setD(e.target.value)} placeholder={autoDescription ? `Empty = automatic: ${autoDescription}` : "Leave empty to auto-generate from the description"} />
+        {templates ? (
+          <div className="seo-tpls">
+            <small>
+              Ready-made (click to use). <code>{"{count}"}</code> = number of novels (updates by itself), <code>{"{name}"}</code> = name.
+            </small>
+            {templates.map((x, i) => (
+              <button type="button" key={i} className="a-btn a-btn-sm a-btn-ghost" onClick={() => setD(x)} title={x}>
+                Template {i + 1}
+              </button>
+            ))}
+            {count !== undefined ? (
+              <button type="button" className="a-btn a-btn-sm a-btn-ghost" onClick={() => setD((v) => (v.includes("{count}") ? v : `${v.trim()} {count} novels`.trim()))}>
+                + {"{count}"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div className="seo-preview">
         <div className="u">{url}</div>
         <div className="t">{t || fallbackTitle || "Page title"}</div>
-        <div className="d">{d || "Description will be generated automatically from your content…"}</div>
+        <div className="d">{fill(d) || autoDescription || "Description will be generated automatically from your content…"}</div>
       </div>
     </>
   );
@@ -369,17 +456,22 @@ export function CategoryPicker({ cats, selected, primary }: { cats: { id: number
   );
 }
 
-export function SlugInput({ name = "slug", defaultValue = "", sourceName = "title", prefix = "/" }: { name?: string; defaultValue?: string; sourceName?: string; prefix?: string }) {
+export function SlugInput({ name = "slug", defaultValue = "", sourceName = "title", prefix = "/", withWriter = false }: { name?: string; defaultValue?: string; sourceName?: string; prefix?: string; withWriter?: boolean }) {
   const [v, setV] = useState(defaultValue);
   const [touched, setTouched] = useState(!!defaultValue);
+  // novels: "{title}-novel-by-{writer}", built live as soon as a writer is picked
+  useNovelSource(withWriter && !touched, ({ t, w }) => {
+    const a = slugPart(t);
+    setV(!a ? "" : /-novel-by-[a-z0-9-]+$/.test(a) || !slugPart(w) ? a : `${a}-novel-by-${slugPart(w)}`);
+  });
   useEffect(() => {
-    if (touched) return;
+    if (touched || withWriter) return;
     const src = document.querySelector<HTMLInputElement>(`input[name="${sourceName}"]`);
     if (!src) return;
     const on = () => setV(src.value.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""));
     src.addEventListener("input", on);
     return () => src.removeEventListener("input", on);
-  }, [touched, sourceName]);
+  }, [touched, sourceName, withWriter]);
   return (
     <div className="a-field">
       <label>URL Slug</label>
@@ -398,7 +490,7 @@ export function SlugInput({ name = "slug", defaultValue = "", sourceName = "titl
           placeholder="auto-generated"
         />
       </div>
-      <small>Leave empty to auto-generate. Changing it changes the page URL.</small>
+      <small>{withWriter && !defaultValue ? "Auto: novel name + writer name. You can edit it; once saved it stays the same." : "Leave empty to auto-generate. Changing it changes the page URL."}</small>
     </div>
   );
 }

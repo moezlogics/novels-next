@@ -7,8 +7,10 @@ const shopRel = (u: string) => (/\/shop(\/|$)/i.test(u) ? "nofollow" : undefined
 
 export default async function Footer() {
   const [s, tree] = await Promise.all([getSettings(), getFooterMenu()]);
-  const columns = tree.filter((t) => t.children.length).map((t) => ({ label: t.label, url: menuHref(t.url), links: t.children.map((c) => ({ label: c.label, url: menuHref(c.url) })) }));
-  let flat = tree.filter((t) => !t.children.length).map((t) => ({ label: t.label, url: menuHref(t.url) }));
+  // sections that are "coming soon" never appear in the footer
+  const hidden = (u: string, l: string) => (s.community_coming_soon && (/\/community(\/|$)/i.test(u) || l.toLowerCase() === "community")) || (s.shop_coming_soon && (/\/shop(\/|$)/i.test(u) || /^(shop|bookstore)$/i.test(l)));
+  const columns = tree.filter((t) => t.children.length).map((t) => ({ label: t.label, url: menuHref(t.url), links: t.children.map((c) => ({ label: c.label, url: menuHref(c.url) })).filter((c) => !hidden(c.url, c.label)) }));
+  let flat = tree.filter((t) => !t.children.length).map((t) => ({ label: t.label, url: menuHref(t.url) })).filter((t) => !hidden(t.url, t.label));
   if (!columns.length && !flat.length) {
     flat = [
       { label: "Privacy Policy", url: "/privacy-policy/" },

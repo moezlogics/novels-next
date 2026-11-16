@@ -6,7 +6,7 @@ import ComingSoon from "@/components/site/ComingSoon";
 import PreviewCookie from "@/components/site/PreviewCookie";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: { absolute: "Community — Readers' Feed" }, description: "Share quotes, excerpts and thoughts with other Urdu novel readers.", robots: "noindex, follow", alternates: { canonical: "/community/" } };
+export const metadata = { title: { absolute: "Community — Readers' Feed" }, description: "Share quotes, excerpts and thoughts with other Urdu novel readers.", robots: "noindex, nofollow", alternates: { canonical: "/community/" } };
 
 export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
   const { preview } = await searchParams;

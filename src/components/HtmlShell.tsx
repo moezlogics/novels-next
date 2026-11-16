@@ -7,6 +7,7 @@ import { getSettings, logoWidth, siteUrl } from "@/lib/settings";
 import { hexToRgb, mediaUrl } from "@/lib/utils";
 import ThirdParty from "./ThirdParty";
 import InstantNav from "./InstantNav";
+import WhatsAppFab from "./site/WhatsAppFab";
 import JsonLd from "./JsonLd";
 import { orgSchema, websiteSchema } from "@/lib/seo";
 
@@ -45,6 +46,8 @@ export default async function HtmlShell({ bodyClass, children }: { bodyClass: st
         {verify.map((v, i) => (v.name ? <meta key={i} name={v.name} content={v.content} /> : <meta key={i} property={v.property} content={v.content} />))}
         <JsonLd data={websiteSchema(s, base)} />
         <JsonLd data={orgSchema(s, base)} />
+        {/* favicon on every page (site, shop, community, account) */}
+        <link rel="icon" href={s.site_favicon ? mediaUrl(s.site_favicon) : "/favicon.ico"} />
         {s.site_favicon ? <link rel="apple-touch-icon" href={mediaUrl(s.site_favicon)} /> : null}
         {s.custom_css ? <style dangerouslySetInnerHTML={{ __html: s.custom_css.replace(/<\/style/gi, "") }} /> : null}
       </head>
@@ -62,6 +65,7 @@ export default async function HtmlShell({ bodyClass, children }: { bodyClass: st
         ) : null}
         {children}
         <InstantNav />
+        <WhatsAppFab url={s.whatsapp_channel_url || ""} />
         {third.length ? <ThirdParty snippets={third} /> : null}
       </body>
     </html>

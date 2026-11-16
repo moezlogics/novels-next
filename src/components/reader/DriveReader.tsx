@@ -17,7 +17,9 @@ import { drivePreviewUrl } from "@/lib/pdfConst";
 
 interface Props {
   pid: number;
-  driveIds: string[]; // Part 1, Part 2, …
+  items: { label: string; driveId: string }[]; // the novel, or its episodes
+  /** Open at this item (changes every time "Read" is pressed on an episode). */
+  requested?: { i: number; n: number } | null;
   title: string;
   cover: string;
   totalPages: number;
@@ -32,14 +34,23 @@ const THEMES: { k: ReaderPrefs["theme"]; label: string; cls: string; sw: string 
   { k: "dark", label: "Night", cls: "night", sw: "#111827" },
 ];
 
-export default function DriveReader({ pid, driveIds, title, cover, totalPages, visible, onClose, onDownload }: Props) {
+export default function DriveReader({ pid, items, requested, title, cover, totalPages, visible, onClose, onDownload }: Props) {
   const [prefs, setPrefs] = useState<ReaderPrefs>(() => getPrefs());
   const [nonce, setNonce] = useState(0);
   const [focus, setFocus] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [part, setPart] = useState(0);
-  const driveId = driveIds[part] || driveIds[0];
-  const multi = driveIds.length > 1;
+  const driveId = (items[part] || items[0]).driveId;
+  const multi = items.length > 1;
+  // "Read" on Episode 3 → show Episode 3 (keeps the same frame when it is already showing)
+  useEffect(() => {
+    if (!requested) return;
+    const i = Math.min(Math.max(0, requested.i), items.length - 1);
+    setPart((cur) => {
+      if (cur !== i) setNonce((n) => n + 1);
+      return i;
+    });
+  }, [requested, items.length]);
 
 
   const close = () => {
@@ -108,7 +119,7 @@ export default function DriveReader({ pid, driveIds, title, cover, totalPages, v
         </button>
         <div className="dr-title">
           <b>{title}</b>
-          <small>{multi ? `Part ${part + 1} of ${driveIds.length}` : totalPages ? `${totalPages} pages` : "Read online"}</small>
+          <small>{multi ? `${items[part]?.label} · ${part + 1} of ${items.length}` : totalPages ? `${totalPages} pages` : "Read online"}</small>
         </div>
         <button className="dr-btn" onClick={() => setFocus(true)} title="Focus mode: hide this bar" aria-label="Focus mode">
           <i className="fa-solid fa-eye-slash"></i>
@@ -119,10 +130,10 @@ export default function DriveReader({ pid, driveIds, title, cover, totalPages, v
         </button>
       </header>
       {multi ? (
-        <nav className="dr-parts" aria-label="Parts">
-          {driveIds.map((_, i) => (
+        <nav className="dr-parts" aria-label="Episodes">
+          {items.map((it, i) => (
             <button key={i} className={i === part ? "on" : ""} aria-current={i === part ? "true" : undefined} onClick={() => openPart(i)}>
-              Part {i + 1}
+              {it.label}
             </button>
           ))}
         </nav>
@@ -163,7 +174,7 @@ export default function DriveReader({ pid, driveIds, title, cover, totalPages, v
               {onDownload ? (
                 <button className="dr-chip" onClick={() => onDownload(driveId)}>
                   <i className="fa-solid fa-download"></i>
-                  {multi ? `Download Part ${part + 1}` : "Download PDF"}
+                  {multi ? `Download ${items[part]?.label}` : "Download PDF"}
                 </button>
               ) : null}
             </div>

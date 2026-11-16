@@ -5,6 +5,7 @@ import { back, bool, bustSite, imageFrom, int, requireAdmin, str } from "@/lib/a
 import { pdfSize } from "@/lib/pdfCache";
 import { extractDriveId, slugify } from "@/lib/utils";
 import { slugMoved } from "@/lib/redirects";
+import type { Episode } from "@/lib/types";
 
 async function uniquePostSlug(base: string, exclude?: number) {
   const posts = await col.posts();
@@ -49,6 +50,27 @@ async function ensureSeries(name: string): Promise<number | null> {
   return id;
 }
 
+/** Episodes from the editor: titles, and http(s) links only (max 500 episodes × 10 links). */
+function parseEpisodes(json: string): Episode[] {
+  try {
+    const raw = JSON.parse(json || "[]");
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .slice(0, 500)
+      .map((e: { title?: unknown; links?: unknown }, i: number) => ({
+        title: String(e?.title || `Episode ${i + 1}`).replace(/<[^>]*>/g, "").trim().slice(0, 80) || `Episode ${i + 1}`,
+        links: (Array.isArray(e?.links) ? e.links : [])
+          .map((l: { url?: unknown; label?: unknown }) => ({ url: String(l?.url || "").trim().slice(0, 600), label: String(l?.label || "").replace(/<[^>]*>/g, "").trim().slice(0, 40) }))
+          .filter((l: { url: string }) => /^https?:\/\/[^\s]+$/i.test(l.url))
+          .slice(0, 10)
+          .map((l: { url: string; label: string }) => (l.label ? l : { url: l.url })),
+      }))
+      .filter((e: Episode) => e.links.length);
+  } catch {
+    return [];
+  }
+}
+
 export async function savePost(fd: FormData) {
   await requireAdmin();
   const id = int(fd, "id");
@@ -89,10 +111,7 @@ export async function savePost(fd: FormData) {
     description: str(fd, "description"),
     image: await imageFrom(fd, "image", title),
     read_online_url: readUrl,
-    read_parts: str(fd, "read_parts", 5000)
-      .split(/\s+/)
-      .filter((u) => extractDriveId(u))
-      .slice(0, 20),
+    episodes: parseEpisodes(str(fd, "episodes", 200000)),
     download_url: dlUrl,
     file_size: str(fd, "file_size", 100),
     file_type: str(fd, "file_type", 100) || "PDF",

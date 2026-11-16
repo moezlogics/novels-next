@@ -13,9 +13,9 @@ function canPreload() {
   return !(c?.saveData || /(^|-)2g$/.test(c?.effectiveType || ""));
 }
 
-export function ReadButton({ pid, driveId, parts = [], title, totalPages, cover, dl, preload = true }: { pid: number; driveId: string; parts?: string[]; title: string; totalPages: number; cover: string; dl?: DlInfo; preload?: boolean }) {
+export function ReadButton({ pid, driveId, title, totalPages, cover, dl, preload = true }: { pid: number; driveId: string; title: string; totalPages: number; cover: string; dl?: DlInfo; preload?: boolean }) {
   // the reader itself lives in the site layout (ReaderHost) so it keeps its place across pages
-  const spec = (): ReaderSpec => ({ pid, driveIds: [driveId, ...parts], title, cover, totalPages, dl });
+  const spec = (): ReaderSpec => ({ key: `${pid}:main`, pid, items: [{ label: title, driveId }], title, cover, totalPages, dl });
   const warm = () => readerCommand("preload", spec());
 
   useEffect(() => {
@@ -45,6 +45,66 @@ export function ReadButton({ pid, driveId, parts = [], title, totalPages, cover,
     <button type="button" className="sp-btn sp-btn-read" aria-label={`Read Online Free: ${title}`} onPointerEnter={warm} onTouchStart={warm} onFocus={warm} onClick={() => readerCommand("open", spec())}>
       <Ico name="read" /> Read Online Free
     </button>
+  );
+}
+
+export interface EpisodeView {
+  title: string;
+  links: { url: string; label: string; driveId: string }[];
+}
+
+const host = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, "");
+  } catch {
+    return "website";
+  }
+};
+
+/** Episodes: Drive links open in the site's reader (with an episode switcher); other links open that site (nofollow). */
+export function EpisodeList({ pid, title, cover, episodes, dl, downloads = true }: { pid: number; title: string; cover: string; episodes: EpisodeView[]; dl?: DlInfo; downloads?: boolean }) {
+  // every Drive link becomes one reader item, named after its episode
+  const items: { label: string; driveId: string }[] = [];
+  for (const e of episodes) {
+    const drive = e.links.filter((l) => l.driveId);
+    drive.forEach((l, j) => items.push({ label: drive.length > 1 ? `${e.title} (${l.label || j + 1})` : e.title, driveId: l.driveId }));
+  }
+  const open = (driveId: string) =>
+    readerCommand("open", { key: `${pid}:ep`, pid, items, start: Math.max(0, items.findIndex((x) => x.driveId === driveId)), title, cover, totalPages: 0, dl: { site: dl?.site } });
+  return (
+    <section className="sp-episodes" aria-label="Episodes">
+      <h2 className="sp-episodes-title">
+        <Ico name="read" /> Episodes <span>({episodes.length})</span>
+      </h2>
+      <ol className="sp-episode-list">
+        {episodes.map((e, i) => (
+          <li key={i} className="sp-episode">
+            <span className="sp-episode-no">{i + 1}</span>
+            <span className="sp-episode-name">{e.title}</span>
+            <span className="sp-episode-actions">
+              {e.links.map((l, j) =>
+                l.driveId ? (
+                  <span key={j} style={{ display: "contents" }}>
+                    <button type="button" className="sp-ep-btn sp-ep-read" onPointerEnter={() => readerCommand("preload", { key: `${pid}:ep`, pid, items, title, cover, totalPages: 0 })} onClick={() => open(l.driveId)}>
+                      <Ico name="read" /> {l.label || "Read"}
+                    </button>
+                    {downloads ? (
+                      <button type="button" className="sp-ep-btn sp-ep-dl" aria-label={`Download ${e.title}`} title="Download PDF" onClick={() => void downloadDrive({ driveId: l.driveId, filename: pdfFilename(`${title} ${e.title}`, dl?.site || "") })}>
+                        <Ico name="download" />
+                      </button>
+                    ) : null}
+                  </span>
+                ) : (
+                  <a key={j} className="sp-ep-btn sp-ep-ext" href={l.url} target="_blank" rel="nofollow noopener noreferrer">
+                    <Ico name="read" /> {l.label || `Read on ${host(l.url)}`}
+                  </a>
+                ),
+              )}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

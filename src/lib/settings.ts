@@ -87,6 +87,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pinterest_verification: "",
   facebook_domain_verification: "",
 
+  whatsapp_channel_url: "",
   twitter_url: "",
   pinterest_url: "",
   telegram_url: "",
