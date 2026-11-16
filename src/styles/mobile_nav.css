@@ -1,0 +1,99 @@
+/* ─── Site-wide mobile bottom navigation ─── */
+.site-mobile-nav {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9000;
+  height: calc(44px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+body.has-mobile-nav {
+  padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+body.page-shop-app.has-mobile-nav {
+  padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+body.reader-open .site-mobile-nav {
+  display: none !important;
+}
+body.reader-open.has-mobile-nav {
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .site-mobile-nav { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-around; 
+  }
+  body.comm-app-page .site-footer { display: none !important; }
+}
+
+@media (min-width: 769px) {
+  .site-mobile-nav { display: none !important; }
+  body.has-mobile-nav { padding-bottom: 0 !important; }
+  body.page-shop-app.has-mobile-nav { padding-bottom: 24px !important; }
+}
+
+.site-mobile-nav a,
+.site-mobile-nav button {
+  flex: 1;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: #000000; /* Inactive items are full black */
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+  font-family: inherit;
+  gap: 1px;
+}
+
+.site-mobile-nav a span,
+.site-mobile-nav button span {
+  font-size: 0.58rem;
+  font-weight: 500; /* Reduced boldness */
+  display: block;
+}
+
+.site-mobile-nav a i,
+.site-mobile-nav button i {
+  font-size: 1.02rem; /* Reduced size */
+  display: block;
+}
+
+/* Active State: Simple Theme Color */
+.site-mobile-nav a.active,
+.site-mobile-nav button.active {
+  color: var(--theme-secondary, #0e7490) !important;
+}
+
+.site-mobile-nav a:hover,
+.site-mobile-nav button:hover {
+  color: var(--theme-primary, #0f2c5c);
+}
+
+/* Floating Elements Adjustments to prevent overlapping with bottom nav bar on mobile */
+@media (max-width: 768px) {
+  #floatingCartBtn {
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  #shopToast {
+    bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

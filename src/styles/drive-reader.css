@@ -1,0 +1,81 @@
+/* ═══ Kitab Nagri Reader — Google Drive viewer inside our own reader ═══ */
+body.reader-open{overflow:hidden!important}
+body.reader-open .site-mobile-nav{display:none!important}
+.dr{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;background:#0f141c;color:#e5e7eb;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+/* preloading: invisible but still on screen, so Chrome keeps rendering the pages (visibility:hidden pauses cross-origin iframes) */
+.dr.dr-hidden{opacity:0;pointer-events:none;z-index:-1}
+.dr *{box-sizing:border-box}
+.dr-top{flex:0 0 auto;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;padding-top:env(safe-area-inset-top,0);background:#18202b;border-bottom:1px solid #2a3544;transition:margin .22s ease}
+.dr-focus .dr-top{margin-top:-53px}
+.dr-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:40px;height:40px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#e5e7eb;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer;flex-shrink:0;text-decoration:none}
+.dr-btn:hover{background:#222c3a}
+.dr-btn.is-on{color:#f59e0b}
+.dr-btn i{font-size:1rem}
+.dr-title{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.dr-title b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr-title small{font-size:.72rem;color:#cbd5e1}
+.dr-stage{position:relative;flex:1;min-height:0;background:#0f141c;overflow:hidden}
+.dr-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;transition:filter .2s}
+.dr-theme-day .dr-frame,.dr-theme-classic .dr-frame{filter:none}
+.dr-theme-sepia .dr-frame{filter:sepia(.55) saturate(1.05) brightness(.96)}
+.dr-theme-night .dr-frame{filter:invert(.9) hue-rotate(180deg) contrast(.92)}
+.dr-dim{position:absolute;inset:0;background:#000;pointer-events:none;transition:opacity .2s}
+.dr-pill{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:5;width:42px;height:42px;border-radius:50%;border:1px solid var(--theme-secondary,#0e7490);background:rgba(24,32,43,.92);color:var(--theme-secondary,#0e7490);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.dr-focus .dr-pill{display:flex}
+
+/* loading */
+.dr-load{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0f141c;text-align:center;padding:24px;transition:opacity .3s}
+.dr-load.done{opacity:0;pointer-events:none}
+.dr-load img{width:110px;height:165px;object-fit:cover;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.dr-load p{margin:0;font-size:.9rem;color:#e2e8f0;max-width:300px}
+.dr-bar{width:180px;height:4px;border-radius:4px;background:#2a3544;overflow:hidden}
+.dr-bar span{display:block;height:100%;width:40%;background:var(--theme-secondary,#0e7490);border-radius:4px;animation:drBar 1.1s ease-in-out infinite}
+@keyframes drBar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+
+/* sheets — every colour is set here so site styles can never make text dark-on-dark */
+.dr-sheet-bg{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.55)}
+.dr .dr-sheet{position:fixed;z-index:10002;right:10px;top:calc(58px + env(safe-area-inset-top,0px));width:340px;max-width:calc(100% - 20px);background:#1b2431;border:1px solid #334155;border-radius:16px;box-shadow:0 18px 48px rgba(0,0,0,.5);padding:16px;max-height:calc(100% - 80px);overflow:auto;color:#f1f5f9;text-align:left}
+@media(max-width:600px){.dr .dr-sheet{left:0;right:0;top:auto;bottom:0;width:100%;max-width:100%;border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}
+.dr .dr-sheet h3{margin:0 0 6px;font-size:1rem;font-weight:800;color:#fff;line-height:1.3}
+.dr .dr-sheet h4{margin:8px 0 8px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#cbd5e1}
+.dr .dr-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.dr .dr-chip{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border-radius:12px;border:1.5px solid #334155;background:#111827;color:#f1f5f9;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer;text-decoration:none}
+.dr .dr-chip:hover{border-color:#64748b}
+.dr .dr-chip.is-on{border-color:#f59e0b;color:#fff;box-shadow:0 0 0 1px #f59e0b inset}
+.dr .dr-chip i{color:#e2e8f0}
+.dr-sw{width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.35)}
+.dr .dr-range{display:flex;align-items:center;gap:10px;margin-bottom:14px;color:#e2e8f0}
+.dr-range input{flex:1;accent-color:#f59e0b}
+.dr .dr-mark{display:flex;gap:8px;align-items:center;margin-top:12px}
+.dr .dr-mark input{flex:1;min-width:0;max-width:150px;height:46px;border-radius:12px;border:1.5px solid #475569;background:#0b1220;color:#fff;text-align:center;font:inherit;font-size:1.15rem;font-weight:800}
+.dr .dr-mark input:focus{outline:none;border-color:#f59e0b}
+.dr .dr-primary{flex:1;height:46px;padding:0 16px;border-radius:12px;border:0;background:#f59e0b;color:#111827;font:inherit;font-size:.92rem;font-weight:800;cursor:pointer}
+.dr .dr-link{background:none;border:0;padding:6px 0;color:#cbd5e1;font:inherit;font-size:.82rem;font-weight:600;text-decoration:underline;cursor:pointer}
+.dr .dr-note{font-size:.8rem;line-height:1.5;color:#cbd5e1;margin:6px 0 0}
+.dr .dr-tips{margin:0;padding-left:18px;color:#e2e8f0;font-size:.8rem;line-height:1.6}
+.dr .dr-save span{font-size:.78rem}
+.dr .dr-save.is-on{color:#f59e0b}
+@media(max-width:380px){.dr .dr-save span{display:none}}
+.dr .dr-retry{background:#273244;color:#fff}
+.dr-toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:10003;padding:10px 18px;border-radius:14px;background:#f8fafc;color:#0f172a;font-size:.84rem;font-weight:600;width:max-content;max-width:calc(100% - 32px);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:none;animation:knToast 2.2s ease forwards}
+@media(max-width:520px){.dr-hide-sm{display:none!important}}
+.dr-shield{position:absolute;top:0;right:0;width:72px;height:64px;z-index:2;background:transparent}
+/* the site stylesheet forces p/li/label to black with !important — the reader is dark, so win here */
+.dr p,.dr li,.dr label,.dr span,.dr small,.dr b,.dr h3,.dr h4{color:inherit!important}
+.dr .dr-sheet{color:#f1f5f9!important}
+.dr .dr-sheet h3{color:#fff!important}
+.dr .dr-sheet h4{color:#cbd5e1!important}
+.dr .dr-note{color:#cbd5e1!important}
+.dr .dr-tips,.dr .dr-tips li{color:#e2e8f0!important}
+.dr .dr-load p{color:#e2e8f0!important}
+.dr .dr-title small{color:#cbd5e1!important}
+.dr .dr-title b{color:#fff!important}
+.dr .dr-toast{color:#0f172a!important}
+.dr .dr-save.is-on span,.dr .dr-save.is-on i{color:#f59e0b!important}
+
+/* parts of a big novel */
+.dr-parts{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:6px 8px;background:#18202b;border-bottom:1px solid #2a3544;scrollbar-width:none}
+.dr-parts::-webkit-scrollbar{display:none}
+.dr .dr-parts button{flex-shrink:0;padding:6px 14px;border-radius:999px;border:1.5px solid #334155;background:#111827;color:#e2e8f0!important;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.dr .dr-parts button.on{background:#f59e0b;border-color:#f59e0b;color:#111827!important}
+.dr-focus .dr-parts{display:none}

@@ -1,0 +1,76 @@
+/* Account sub-app — hide main site header/footer, keep mobile bottom nav */
+body.page-account-app header {
+  display: none !important;
+}
+
+body.page-account-app .site-footer {
+  display: none !important;
+}
+
+body.page-account-app::before {
+  display: none !important;
+}
+
+body.page-account-app {
+  padding-top: 0 !important;
+  background: #ffffff !important;
+}
+
+body.page-account-app.has-mobile-nav {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Top bar — same idea as shop */
+.acct-app-topnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.acct-app-topnav-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 1.05rem;
+  text-decoration: none;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.acct-app-topnav-btn:hover {
+  background: #f1f5f9;
+  color: var(--theme-secondary, #0e7490);
+}
+
+.acct-app-topnav-spacer {
+  pointer-events: none;
+}
+
+.acct-app-topnav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
+.acct-app-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
