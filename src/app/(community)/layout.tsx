@@ -1,3 +1,4 @@
+import "@/styles/icons-community.css";
 import "@/styles/community.css";
 import type { ReactNode } from "react";
 import HtmlShell from "@/components/HtmlShell";

@@ -2,7 +2,6 @@ import "@/styles/tailwind.css";
 import "@/styles/style.css";
 import "@/styles/mobile_nav.css";
 import "@/styles/critical.css";
-import "@/styles/icons-site.css";
 import type { ReactNode } from "react";
 import { getSettings, logoWidth, siteUrl } from "@/lib/settings";
 import { hexToRgb, mediaUrl } from "@/lib/utils";

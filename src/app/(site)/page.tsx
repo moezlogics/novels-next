@@ -1,6 +1,8 @@
 import "@/styles/index.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { preload } from "react-dom";
+import { thumbUrl } from "@/lib/utils";
 import { getSettings, siteUrl } from "@/lib/settings";
 import { getCarouselCategories, getPostsByIdsOrdered, getRecentPosts, getTrendingPosts } from "@/lib/data";
 import { buildMeta } from "@/lib/seo";
@@ -24,6 +26,9 @@ export default async function HomePage() {
     getPostsByIdsOrdered((s.homepage_famous_ids || []).slice(0, 24)),
     getTrendingPosts(8),
   ]);
+  // the first cover is the biggest thing on a phone screen: start downloading it from the <head>
+  const lcp = recent[0]?.image;
+  if (lcp) preload(thumbUrl(lcp, 400), { as: "image", imageSrcSet: `${thumbUrl(lcp, 200)} 200w, ${thumbUrl(lcp, 400)} 400w`, imageSizes: "(min-width: 1024px) 12vw, (min-width: 768px) 25vw, 50vw", fetchPriority: "high" });
   const base = siteUrl();
   const famousTitle = s.homepage_famous_title?.trim() || "Famous Novels";
   const title = s.homepage_title || s.site_name;
@@ -66,7 +71,7 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-card-gap">
               {recent.map((p, i) => (
-                <BookCard key={p.id} post={p} eager={i === 0} />
+                <BookCard key={p.id} post={p} eager={i < 2} />
               ))}
             </div>
           </>

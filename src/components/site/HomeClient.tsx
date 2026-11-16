@@ -39,7 +39,8 @@ export function CategoryCarousel({ cats }: { cats: { id: number; name: string; s
                 src={c.image ? thumbUrl(c.image, 200) : letterImage(c.name)}
                 alt={`${c.name} novels`}
                 style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%", display: "block" }}
-                loading={i >= 6 ? "lazy" : "eager"}
+                loading={i >= 4 ? "lazy" : "eager"}
+                fetchPriority="low"
                 decoding="async"
                 width={78}
                 height={78}

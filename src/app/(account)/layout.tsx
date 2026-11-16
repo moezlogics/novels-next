@@ -1,3 +1,4 @@
+import "@/styles/icons-account.css";
 import "@/styles/account_app.css";
 import "@/styles/auth.css";
 import "@/styles/account.css";

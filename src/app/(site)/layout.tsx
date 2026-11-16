@@ -1,3 +1,4 @@
+import "@/styles/icons-site.css";
 import type { ReactNode } from "react";
 import HtmlShell from "@/components/HtmlShell";
 import Header from "@/components/site/Header";

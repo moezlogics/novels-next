@@ -1,3 +1,4 @@
+import "@/styles/icons-shop.css";
 import "@/styles/shop.css";
 import "@/styles/single.css";
 import type { ReactNode } from "react";
