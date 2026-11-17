@@ -2,14 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { col } from "@/lib/db";
 import { getMemberId } from "@/lib/auth";
-import { hydratePosts } from "@/lib/community";
+import { hydratePosts, hydrateStories } from "@/lib/community";
 import { featureOpen } from "@/lib/comingSoon";
-import { ProfileOwnerActions, ProfilePosts, ProfileShare } from "@/components/community/Community";
-import { mediaUrl } from "@/lib/utils";
+import { Avatar, ProfileActions, ProfilePosts } from "@/components/community/Community";
+import { StoryRow, SubTop } from "@/components/community/Chrome";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ username: string }> };
+type Props = { params: Promise<{ username: string }>; searchParams: Promise<{ tab?: string }> };
 
 export async function generateMetadata({ params }: Props) {
   const u = decodeURIComponent((await params).username);
@@ -19,110 +19,82 @@ export async function generateMetadata({ params }: Props) {
 
 const n = (x: number) => x.toLocaleString("en-PK");
 
-export default async function ProfilePage({ params }: Props) {
+export default async function ProfilePage({ params, searchParams }: Props) {
   if (!(await featureOpen("community"))) notFound();
   const username = decodeURIComponent((await params).username);
   const author = await (await col.members()).findOne({ username });
   if (!author) notFound();
   const viewer = await getMemberId();
   const owner = viewer === author._id;
-  const posts = await hydratePosts(await (await col.communityPosts()).find({ member_id: author._id }).sort({ created_at: -1 }).limit(100).toArray(), viewer);
-
+  const [posts, stories] = await Promise.all([
+    hydratePosts(await (await col.communityPosts()).find({ member_id: author._id }).sort({ created_at: -1 }).limit(100).toArray(), viewer),
+    hydrateStories(await (await col.stories()).find(owner ? { member_id: author._id } : { member_id: author._id, episodes: { $gt: 0 } }).sort({ updated_at: -1 }).limit(50).toArray()),
+  ]);
+  const tab = (await searchParams).tab === "stories" ? "stories" : "posts";
   const likes = posts.reduce((a, p) => a + p.likes_count, 0);
-  const comments = posts.reduce((a, p) => a + p.comments_count, 0);
-  const views = posts.reduce((a, p) => a + p.views, 0);
-  const best = [...posts].sort((a, b) => b.likes_count * 3 + b.comments_count * 4 + b.views - (a.likes_count * 3 + a.comments_count * 4 + a.views))[0];
-  const pic = author.profile_pic && !/default_avatar/i.test(author.profile_pic) ? mediaUrl(author.profile_pic) : "";
-  const joined = new Date(author.created_at).toLocaleDateString("en-PK", { month: "long", year: "numeric" });
+  const views = posts.reduce((a, p) => a + p.views, 0) + stories.reduce((a, s) => a + s.views, 0);
+  const base = `/community/u/${encodeURIComponent(author.username)}/`;
 
   return (
-    <div className="cp">
-      <div className="cp-cover" />
-      <section className="cp-head">
-        <div className="cp-avatar">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {pic ? <img src={pic} alt="" /> : <span>{author.name.charAt(0).toUpperCase()}</span>}
+    <div className="cm">
+      <SubTop back="/community/" title={author.name} />
+      <section className="cm-pf">
+        <Avatar src={author.profile_pic} name={author.name} size={72} />
+        <div className="cm-pf-id">
+          <h2>{author.name}</h2>
+          <p className="cm-muted">@{author.username}</p>
         </div>
-        <div className="cp-id">
-          <h1>{author.name}</h1>
-          <p className="cp-handle">@{author.username}</p>
-          {author.bio ? <p className="cp-bio">{author.bio}</p> : null}
-          <p className="cp-joined">
-            <i className="fa-regular fa-calendar"></i> Joined {joined}
+        {author.bio ? (
+          <p className="cm-pf-bio" dir="auto">
+            {author.bio}
           </p>
-        </div>
-        <div className="cp-actions">
+        ) : null}
+        <p className="cm-pf-stats">
+          <span>
+            <b>{n(posts.length)}</b> posts
+          </span>
+          <span>
+            <b>{n(stories.length)}</b> stories
+          </span>
+          <span>
+            <b>{n(likes)}</b> likes
+          </span>
           {owner ? (
-            <>
-              <Link href="/community/?compose=1" className="comm-btn comm-btn-primary comm-btn-sm" rel="nofollow">
-                <i className="fa-solid fa-plus"></i> New post
-              </Link>
-              <ProfileOwnerActions username={author.username} />
-            </>
-          ) : (
-            <ProfileShare name={author.name} />
-          )}
-          <Link href="/community/" className="comm-btn comm-btn-ghost comm-btn-sm" rel="nofollow">
-            <i className="fa-solid fa-arrow-left"></i> Feed
-          </Link>
-        </div>
-        <div className="cp-stats">
-          <div>
-            <b>{n(posts.length)}</b>
-            <span>Posts</span>
-          </div>
-          <div>
-            <b>{n(likes)}</b>
-            <span>Likes</span>
-          </div>
-          <div>
-            <b>{n(comments)}</b>
-            <span>Comments</span>
-          </div>
-          {owner ? (
-            <div>
-              <b>{n(views)}</b>
-              <span>Views</span>
-            </div>
+            <span title="Only you can see this">
+              <b>{n(views)}</b> views
+            </span>
           ) : null}
-        </div>
+        </p>
+        <ProfileActions username={author.username} name={author.name} />
       </section>
 
-      {owner && posts.length ? (
-        <section className="cp-card cp-insights" aria-label="Your insights">
-          <h2>
-            <i className="fa-solid fa-chart-simple"></i> Your insights <small>only you can see this</small>
-          </h2>
-          <div className="cp-insight-grid">
-            <div>
-              <b>{n(views)}</b>
-              <span>Total views</span>
-            </div>
-            <div>
-              <b>{(Math.round((views / posts.length) * 10) / 10).toLocaleString()}</b>
-              <span>Views per post</span>
-            </div>
-            <div>
-              <b>{views ? `${Math.round(((likes + comments) / views) * 1000) / 10}%` : "—"}</b>
-              <span>Engagement</span>
-            </div>
-          </div>
-          {best ? (
-            <Link href={`/community/post/${best.id}/`} className="cp-best" rel="nofollow">
-              <span className="cp-best-tag">Top post</span>
-              <span className="cp-best-text">{best.content.slice(0, 120) || "Photo post"}</span>
-              <span className="cp-best-nums">
-                <i className="fa-regular fa-eye"></i> {n(best.views)} · <i className="fa-regular fa-heart"></i> {n(best.likes_count)} · <i className="fa-regular fa-comment"></i> {n(best.comments_count)}
-              </span>
+      <nav className="cm-tabs" aria-label="Profile sections">
+        <Link href={base} rel="nofollow" className={tab === "posts" ? "on" : ""}>
+          Posts
+        </Link>
+        <Link href={`${base}?tab=stories`} rel="nofollow" className={tab === "stories" ? "on" : ""}>
+          Stories
+        </Link>
+      </nav>
+
+      {tab === "posts" ? (
+        <ProfilePosts posts={posts} owner={owner} />
+      ) : stories.length ? (
+        <div className="cm-stories">
+          {stories.map((s) => (
+            <StoryRow key={s.id} s={s} showAuthor={false} />
+          ))}
+        </div>
+      ) : (
+        <div className="cm-empty">
+          <p>{owner ? "You haven't written a story yet." : "No stories yet."}</p>
+          {owner ? (
+            <Link href="/community/write/" className="cm-btn" rel="nofollow">
+              Write a story
             </Link>
           ) : null}
-        </section>
-      ) : null}
-
-      <section className="cp-posts" aria-label="Posts">
-        <h2 className="cp-posts-title">Posts</h2>
-        <ProfilePosts posts={posts} owner={owner} />
-      </section>
+        </div>
+      )}
     </div>
   );
 }

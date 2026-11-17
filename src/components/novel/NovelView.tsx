@@ -69,6 +69,13 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
                 </Link>
               </div>
             ) : null}
+            {s.whatsapp_channel_url ? (
+              <a href={s.whatsapp_channel_url} target="_blank" rel="noopener" className="sp-wa-under" aria-label="Join our WhatsApp Channel">
+                <WhatsAppGlyph />
+                <span className="sp-wa-short">Join Channel</span>
+                <span className="sp-wa-long">Join WhatsApp Channel</span>
+              </a>
+            ) : null}
           </div>
           <div className="sp-hero-info">
             <h1 className="sp-title">{n.title}</h1>
@@ -95,7 +102,7 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
               ) : null}
             </div>
 
-            {n.read_online_url || n.download_url || s.whatsapp_channel_url ? (
+            {n.read_online_url || n.download_url ? (
               <div className="sp-actions-wrap">
                 {readId ? (
                   <ReadButton pid={n.id} driveId={readId} title={n.title} totalPages={n.pages || 0} cover={cover} dl={dl} preload={s.reader_preload !== false} />
@@ -112,11 +119,6 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
                       <Ico name="download" /> Download Free
                     </a>
                   )
-                ) : null}
-                {s.whatsapp_channel_url ? (
-                  <a href={s.whatsapp_channel_url} target="_blank" rel="noopener" className="sp-btn sp-btn-wa">
-                    <WhatsAppGlyph /> Join WhatsApp Channel
-                  </a>
                 ) : null}
               </div>
             ) : null}

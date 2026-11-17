@@ -16,11 +16,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="auth-page">
           <div className="auth-shell">
             <div className="auth-brand">
-              <div className="auth-logo">
-                <i className="fa-solid fa-right-to-bracket"></i>
-              </div>
               <h1 className="auth-title">Welcome back</h1>
-              <p className="auth-sub">Sign in to manage orders, bookmarks, and your reader profile.</p>
+              <p className="auth-sub">Sign in to continue.</p>
             </div>
             <LoginForm returnUrl={ret} />
           </div>

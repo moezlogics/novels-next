@@ -20,11 +20,23 @@ export interface FeedPost {
   comments_count: number;
   views: number;
   user_liked: boolean;
+  story?: { id: number; n: number; title: string; ep: string };
 }
 
-const DEFAULT_AVATAR = "/uploads/community/default_avatar.png";
-const av = (p: string) => (p ? mediaUrl(p) : DEFAULT_AVATAR);
 const goLogin = () => (window.location.href = `/login/?return=${encodeURIComponent(location.pathname + location.search)}`);
+const num = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "")}k` : String(n));
+
+/** Round avatar: the photo, or the first letter of the name. */
+export function Avatar({ src, name, size = 40 }: { src?: string | null; name: string; size?: number }) {
+  const pic = src && !/default_avatar/i.test(src) ? mediaUrl(src) : "";
+  const [broken, setBroken] = useState(false);
+  return (
+    <span className="cm-av" style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }} aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {pic && !broken ? <img src={pic} alt="" loading="lazy" onError={() => setBroken(true)} /> : (name || "?").trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
 
 // ── post views: a post counts when it stays on screen for a second ──
 const seenPosts = new Set<number>();
@@ -56,9 +68,7 @@ function markSeen(id: number) {
   viewTimer = window.setTimeout(flushViews, 2500);
 }
 
-const plural = (n: number, w: string) => `${n.toLocaleString()} ${w}${n === 1 ? "" : "s"}`;
-
-function useToast() {
+export function useToast() {
   const [t, setT] = useState("");
   const timer = useRef(0);
   const show = (m: string) => {
@@ -66,44 +76,61 @@ function useToast() {
     clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setT(""), 2600);
   };
-  const el = <div className={`comm-toast${t ? " show" : ""}`}>{t}</div>;
+  const el = (
+    <div className={`cm-toast${t ? " show" : ""}`} role="status">
+      {t}
+    </div>
+  );
   return { show, el };
 }
 
-function Skeletons({ n = 3 }: { n?: number }) {
+function Skeletons({ n = 4 }: { n?: number }) {
   return (
     <>
       {Array.from({ length: n }).map((_, i) => (
-        <div className="comm-skeleton" key={i}>
-          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-            <div className="comm-skel-avatar"></div>
-            <div style={{ flex: 1 }}>
-              <div className="comm-skel-line w40"></div>
-              <div className="comm-skel-line w60"></div>
-            </div>
+        <div className="cm-post cm-skel" key={i} aria-hidden="true">
+          <span className="cm-av" style={{ width: 40, height: 40 }}></span>
+          <div className="cm-post-main">
+            <i style={{ width: "35%" }}></i>
+            <i style={{ width: "90%" }}></i>
+            <i style={{ width: "60%" }}></i>
           </div>
-          <div className="comm-skel-line w80"></div>
-          <div className="comm-skel-line w60"></div>
         </div>
       ))}
     </>
   );
 }
 
-export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, style }: { post: FeedPost; me: Me["member"]; onDeleted?: (id: number) => void; toast: (m: string) => void; defaultOpen?: boolean; style?: React.CSSProperties }) {
+interface CommentRow {
+  id: number;
+  comment: string;
+  created_at: string;
+  author_name: string;
+  author_avatar: string;
+}
+
+/**
+ * One post. `full` shows the whole text (single-post page); in the feed long text is
+ * cut to a few lines with "Read more". `bare` shows only the actions and comments
+ * (used under a story episode).
+ */
+export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, full = false, bare = false }: { post: FeedPost; me: Me["member"]; onDeleted?: (id: number) => void; toast: (m: string) => void; defaultOpen?: boolean; full?: boolean; bare?: boolean }) {
   const [p, setP] = useState(post);
   const [menu, setMenu] = useState(false);
   const [open, setOpen] = useState(defaultOpen);
-  const [comments, setComments] = useState<{ id: number; comment: string; created_at: string; author_name: string; author_avatar: string }[] | null>(null);
+  const [expanded, setExpanded] = useState(full);
+  const [comments, setComments] = useState<CommentRow[] | null>(null);
   const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
   const [lightbox, setLightbox] = useState("");
   const profile = `/community/u/${encodeURIComponent(p.author_username)}/`;
   const mine = !!me && me.id === p.member_id;
   const box = useRef<HTMLElement>(null);
+  const long = p.content.length > 320 || p.content.split("\n").length > 7;
 
   // count a view once the post has been on screen for a second (not the author's own)
   useEffect(() => {
-    if (mine || !box.current) return;
+    if (mine || bare || !box.current) return;
     let t = 0;
     const io = new IntersectionObserver(
       ([e]) => {
@@ -114,10 +141,12 @@ export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, styl
     );
     io.observe(box.current);
     return () => (clearTimeout(t), io.disconnect());
-  }, [mine, p.id]);
+  }, [mine, bare, p.id]);
 
   const loadComments = useCallback(async () => {
-    const d = await fetch(`/api/community/${p.id}/`).then((r) => r.json()).catch(() => ({ comments: [] }));
+    const d = await fetch(`/api/community/${p.id}/`)
+      .then((r) => r.json())
+      .catch(() => ({ comments: [] }));
     setComments(d.comments || []);
   }, [p.id]);
   useEffect(() => {
@@ -129,27 +158,42 @@ export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, styl
     document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
   }, [menu]);
+  useEffect(() => {
+    if (!lightbox) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setLightbox("");
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [lightbox]);
 
+  const act = (body: object) => fetch(`/api/community/${p.id}/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
   const like = async () => {
     if (!me) return goLogin();
-    const d = await fetch(`/api/community/${p.id}/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "like" }) }).then((r) => r.json());
-    if (d.status === "success") setP({ ...p, user_liked: d.user_liked, likes_count: d.likes_count });
-    else toast(d.error || "Failed");
+    // show the change at once, correct it if the server says otherwise
+    const before = p;
+    setP({ ...p, user_liked: !p.user_liked, likes_count: p.likes_count + (p.user_liked ? -1 : 1) });
+    const d = await act({ action: "like" }).catch(() => null);
+    if (d?.status === "success") setP((x) => ({ ...x, user_liked: d.user_liked, likes_count: d.likes_count }));
+    else {
+      setP(before);
+      toast(d?.error || "Could not like. Try again.");
+    }
   };
   const send = async () => {
     if (!me) return goLogin();
-    if (!text.trim()) return;
-    const d = await fetch(`/api/community/${p.id}/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "comment", comment: text }) }).then((r) => r.json());
-    if (d.status === "success") {
+    if (!text.trim() || sending) return;
+    setSending(true);
+    const d = await act({ action: "comment", comment: text }).catch(() => null);
+    setSending(false);
+    if (d?.status === "success") {
       setText("");
-      setP({ ...p, comments_count: d.comments_count });
+      setP((x) => ({ ...x, comments_count: d.comments_count }));
       void loadComments();
-    } else toast(d.error || "Comment blocked");
+    } else toast(d?.error || "Comment was not sent.");
   };
   const share = async () => {
-    const url = `${location.origin}/community/post/${p.id}/`;
+    const url = p.story ? `${location.origin}/community/story/${p.story.id}/${p.story.n}/` : `${location.origin}/community/post/${p.id}/`;
     try {
-      if (navigator.share) await navigator.share({ title: `${p.author_name} on community`, url });
+      if (navigator.share) await navigator.share({ title: p.story ? p.story.title : `${p.author_name} on community`, url });
       else {
         await navigator.clipboard.writeText(url);
         toast("Link copied");
@@ -157,7 +201,7 @@ export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, styl
     } catch {}
   };
   const del = async () => {
-    if (!confirm("Delete this post permanently?")) return;
+    if (!confirm("Delete this post? This cannot be undone.")) return;
     const d = await fetch("/api/community/", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post_id: p.id }) }).then((r) => r.json());
     if (d.status === "success") {
       toast("Post deleted");
@@ -165,128 +209,155 @@ export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, styl
     } else toast(d.error || "Could not delete");
   };
 
-  return (
-    <article ref={box} className="comm-post" data-post-id={p.id} style={style}>
-      <div className="comm-post-header">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={av(p.author_avatar)} alt="" className="comm-post-avatar" onClick={() => (location.href = profile)} onError={(e) => ((e.target as HTMLImageElement).src = DEFAULT_AVATAR)} />
-        <div className="comm-post-meta">
-          <Link href={profile} className="comm-post-name" rel="nofollow">
-            {p.author_name}
-          </Link>
-          <div className="comm-post-sub" suppressHydrationWarning>
-            @{p.author_username} · {timeAgo(p.created_at)} {p.category_name ? <span className="comm-post-badge">{p.category_name}</span> : null}
-          </div>
-        </div>
-        {mine ? (
-          <div className="comm-post-menu">
-            <button
-              type="button"
-              className="comm-post-menu-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenu((m) => !m);
-              }}
-            >
-              <i className="fa-solid fa-ellipsis"></i>
-            </button>
-            <div className={`comm-post-dropdown${menu ? " open" : ""}`}>
-              <button type="button" onClick={del}>
-                Delete post
-              </button>
+  const actions = (
+    <div className="cm-actions">
+      <button type="button" className={`cm-act${p.user_liked ? " on" : ""}`} onClick={like} aria-pressed={p.user_liked} aria-label="Like">
+        <i className={p.user_liked ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+        {p.likes_count ? <span>{num(p.likes_count)}</span> : null}
+      </button>
+      <button type="button" className="cm-act" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Comments">
+        <i className="fa-regular fa-comment"></i>
+        {p.comments_count ? <span>{num(p.comments_count)}</span> : null}
+      </button>
+      <button type="button" className="cm-act" onClick={share} aria-label="Share">
+        <i className="fa-solid fa-share"></i>
+      </button>
+      {mine && !bare ? (
+        <span className="cm-act cm-views" title="Views — only you can see this">
+          <i className="fa-regular fa-eye"></i>
+          <span>{num(p.views)}</span>
+        </span>
+      ) : null}
+    </div>
+  );
+
+  const thread = open ? (
+    <div className="cm-comments">
+      {comments === null ? (
+        <p className="cm-note">Loading…</p>
+      ) : !comments.length ? (
+        <p className="cm-note">No comments yet. Be the first.</p>
+      ) : (
+        comments.map((c) => (
+          <div className="cm-comment" key={c.id}>
+            <Avatar src={c.author_avatar} name={c.author_name} size={28} />
+            <div>
+              <b>{c.author_name}</b> <time suppressHydrationWarning>{timeAgo(c.created_at)}</time>
+              <p dir="auto">{c.comment}</p>
             </div>
           </div>
-        ) : null}
-      </div>
-      <div className="comm-post-body" style={{ whiteSpace: "pre-wrap" }}>
-        {p.content}
-      </div>
-      {p.images.length ? (
-        <div className={`comm-post-images ${p.images.length === 1 ? "single" : "multi"}`}>
-          {p.images.map((img) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={img} src={mediaUrl(img)} alt="" loading="lazy" onClick={() => setLightbox(mediaUrl(img))} />
-          ))}
-        </div>
-      ) : null}
-      {p.likes_count || p.comments_count || mine ? (
-        <div className="comm-post-stats">
-          <span>
-            {p.likes_count ? (
-              <>
-                <span className="comm-like-bubble">
-                  <i className="fa-solid fa-heart"></i>
-                </span>{" "}
-                {p.likes_count.toLocaleString()}
-              </>
-            ) : null}
-          </span>
-          <span>
-            {p.comments_count ? (
-              <button type="button" className="comm-stats-link" onClick={() => setOpen((o) => !o)}>
-                {plural(p.comments_count, "comment")}
+        ))
+      )}
+      {me ? (
+        <form
+          className="cm-comment-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+        >
+          <input type="text" placeholder="Write a comment…" value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} dir="auto" aria-label="Write a comment" />
+          <button type="submit" disabled={!text.trim() || sending}>
+            {sending ? "…" : "Send"}
+          </button>
+        </form>
+      ) : (
+        <p className="cm-note">
+          <button type="button" className="cm-link" onClick={goLogin}>
+            Sign in
+          </button>{" "}
+          to comment
+        </p>
+      )}
+    </div>
+  ) : null;
+
+  if (bare)
+    return (
+      <section className="cm-bare" aria-label="Likes and comments">
+        {actions}
+        {thread}
+      </section>
+    );
+
+  return (
+    <article ref={box} className="cm-post">
+      <Link href={profile} rel="nofollow" tabIndex={-1} aria-hidden="true">
+        <Avatar src={p.author_avatar} name={p.author_name} />
+      </Link>
+      <div className="cm-post-main">
+        <header className="cm-post-head">
+          <Link href={profile} className="cm-name" rel="nofollow">
+            {p.author_name}
+          </Link>
+          <time suppressHydrationWarning>{timeAgo(p.created_at)}</time>
+          {mine && !p.story ? (
+            <div className="cm-menu">
+              <button
+                type="button"
+                aria-label="Post options"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenu((m) => !m);
+                }}
+              >
+                <i className="fa-solid fa-ellipsis"></i>
+              </button>
+              {menu ? (
+                <div className="cm-menu-list">
+                  <button type="button" onClick={del}>
+                    <i className="fa-solid fa-trash"></i> Delete
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </header>
+
+        {p.story ? (
+          <Link href={`/community/story/${p.story.id}/${p.story.n}/`} className="cm-epcard" rel="nofollow">
+            <span className="cm-epcard-ico">
+              <i className="fa-solid fa-book-open"></i>
+            </span>
+            <span className="cm-epcard-txt">
+              <small>New episode · {p.story.title}</small>
+              <b dir="auto">
+                Episode {p.story.n}
+                {p.story.ep ? `: ${p.story.ep}` : ""}
+              </b>
+            </span>
+            <span className="cm-epcard-go">Read</span>
+          </Link>
+        ) : p.content ? (
+          <>
+            <div className={`cm-text${long && !expanded ? " clamp" : ""}`} dir="auto">
+              {p.content}
+            </div>
+            {long && !expanded ? (
+              <button type="button" className="cm-link cm-more" onClick={() => setExpanded(true)}>
+                Read more
               </button>
             ) : null}
-            {mine ? (
-              <span className="comm-views" title="Only you can see this">
-                <i className="fa-regular fa-eye"></i> {plural(p.views, "view")}
-              </span>
-            ) : null}
-          </span>
-        </div>
-      ) : null}
-      <div className="comm-post-actions">
-        <button type="button" className={`comm-action${p.user_liked ? " liked" : ""}`} onClick={like} aria-pressed={p.user_liked}>
-          <i className={p.user_liked ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i> <span>Like</span>
-        </button>
-        <button type="button" className="comm-action" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          <i className="fa-regular fa-comment"></i> <span>Comment</span>
-        </button>
-        <button type="button" className="comm-action" onClick={share}>
-          <i className="fa-solid fa-share"></i> <span>Share</span>
-        </button>
-      </div>
-      <div className={`comm-comments${open ? " open" : ""}`}>
-        <div className="comments-list">
-          {comments === null && open ? (
-            <p style={{ textAlign: "center", color: "#94a3b8", fontSize: ".82rem", padding: 8 }}>
-              <i className="fa-solid fa-spinner fa-spin"></i>
-            </p>
-          ) : comments && !comments.length ? (
-            <p style={{ textAlign: "center", color: "#94a3b8", fontSize: ".82rem", padding: 8 }}>No comments yet</p>
-          ) : (
-            comments?.map((c) => (
-              <div className="comm-comment" key={c.id}>
+          </>
+        ) : null}
+
+        {p.images.length ? (
+          <div className={`cm-imgs n${Math.min(p.images.length, 4)}`}>
+            {p.images.slice(0, 4).map((img) => (
+              <button type="button" key={img} onClick={() => setLightbox(mediaUrl(img))} aria-label="Open photo">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={av(c.author_avatar)} alt="" className="comm-comment-avatar" onError={(e) => ((e.target as HTMLImageElement).src = DEFAULT_AVATAR)} />
-                <div className="comm-comment-bubble">
-                  <div className="comm-comment-author">{c.author_name}</div>
-                  <div className="comm-comment-text">{c.comment}</div>
-                  <div className="comm-comment-time">{timeAgo(c.created_at)}</div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-        {me ? (
-          <div className="comm-comment-form">
-            <input type="text" placeholder="Write a comment…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} maxLength={1000} />
-            <button type="button" className="comm-comment-send" onClick={send}>
-              <i className="fa-solid fa-paper-plane"></i>
-            </button>
+                <img src={mediaUrl(img)} alt="" loading="lazy" />
+              </button>
+            ))}
           </div>
-        ) : (
-          <p style={{ textAlign: "center", fontSize: ".82rem", color: "#94a3b8", padding: "8px 0" }}>
-            <a href="#" onClick={(e) => (e.preventDefault(), goLogin())}>
-              Sign in
-            </a>{" "}
-            to comment
-          </p>
-        )}
+        ) : null}
+
+        {actions}
+        {thread}
       </div>
       {lightbox ? (
-        <div className="comm-lightbox open" onClick={() => setLightbox("")}>
-          <button type="button" className="comm-lightbox-close">
+        <div className="cm-lightbox" onClick={() => setLightbox("")} role="dialog" aria-label="Photo">
+          <button type="button" aria-label="Close">
             <i className="fa-solid fa-xmark"></i>
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -300,68 +371,76 @@ export function PostCard({ post, me, onDeleted, toast, defaultOpen = false, styl
 function Composer({ open, onClose, cats, onPosted, toast }: { open: boolean; onClose: () => void; cats: { id: number; name: string }[]; onPosted: () => void; toast: (m: string) => void }) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [len, setLen] = useState(0);
   const ta = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (open) setTimeout(() => ta.current?.focus(), 200);
-  }, [open]);
+    if (!open) return;
+    const t = setTimeout(() => ta.current?.focus(), 150);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", esc);
+    return () => (clearTimeout(t), document.removeEventListener("keydown", esc));
+  }, [open, onClose]);
+  if (!open) return null;
   return (
-    <>
-      <div className={`comm-overlay${open ? " open" : ""}`} onClick={onClose}></div>
-      <div className={`comm-sheet${open ? " open" : ""}`} role="dialog" aria-label="Create post">
-        <div className="comm-sheet-header">
-          <p className="comm-sheet-title">Create Post</p>
-          <button type="button" className="comm-icon-btn" onClick={onClose}>
-            <i className="fa-solid fa-xmark"></i>
+    <div className="cm-sheet-wrap" onClick={onClose}>
+      <form
+        className="cm-sheet"
+        role="dialog"
+        aria-label="New post"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          setBusy(true);
+          const d = await fetch("/api/community/", { method: "POST", body: new FormData(form) })
+            .then((r) => r.json())
+            .catch(() => ({ error: "No internet. Please try again." }));
+          setBusy(false);
+          if (d.status === "success") {
+            form.reset();
+            setPreviews([]);
+            setLen(0);
+            onClose();
+            toast("Posted");
+            onPosted();
+          } else toast(d.error || "This post was not allowed.");
+        }}
+      >
+        <div className="cm-sheet-head">
+          <button type="button" className="cm-link" onClick={onClose}>
+            Cancel
+          </button>
+          <b>New post</b>
+          <button type="submit" className="cm-btn" disabled={busy || !len}>
+            {busy ? "Posting…" : "Post"}
           </button>
         </div>
-        <form
-          className="comm-sheet-body"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const form = e.currentTarget;
-            setBusy(true);
-            const d = await fetch("/api/community/", { method: "POST", body: new FormData(form) })
-              .then((r) => r.json())
-              .catch(() => ({ error: "Network error" }));
-            setBusy(false);
-            if (d.status === "success") {
-              form.reset();
-              setPreviews([]);
-              onClose();
-              toast("Post published");
-              onPosted();
-            } else toast(d.error || "Post blocked by moderation");
-          }}
-        >
-          <textarea ref={ta} name="content" placeholder="What's on your mind? Share a novel excerpt, quote, or story…" required maxLength={5000}></textarea>
-          {previews.length ? (
-            <div className="comm-img-preview" style={{ display: "flex" }}>
-              {previews.map((src) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={src} src={src} alt="" />
-              ))}
-            </div>
-          ) : null}
-          <div className="comm-sheet-footer">
-            <select name="category_id" defaultValue="">
-              <option value="">Category (optional)</option>
-              {cats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <label className="comm-btn comm-btn-ghost comm-btn-sm" htmlFor="postImages" style={{ cursor: "pointer", flexShrink: 0 }}>
-              <i className="fa-solid fa-image"></i>
-            </label>
-            <input type="file" name="images" id="postImages" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => setPreviews(Array.from(e.target.files || []).slice(0, 4).map((f) => URL.createObjectURL(f)))} />
-            <button type="submit" className="comm-btn comm-btn-primary comm-btn-sm" style={{ flexShrink: 0 }} disabled={busy}>
-              {busy ? "Posting…" : "Post"}
-            </button>
+        <textarea ref={ta} name="content" placeholder="Share a quote, a thought, a favourite line…" required maxLength={5000} dir="auto" onChange={(e) => setLen(e.target.value.trim().length)}></textarea>
+        {previews.length ? (
+          <div className="cm-previews">
+            {previews.map((src) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={src} src={src} alt="" />
+            ))}
           </div>
-        </form>
-      </div>
-    </>
+        ) : null}
+        <div className="cm-sheet-foot">
+          <label className="cm-tool" title="Add photos (up to 4)">
+            <i className="fa-solid fa-image"></i>
+            <input type="file" name="images" multiple accept="image/*" hidden onChange={(e) => setPreviews(Array.from(e.target.files || []).slice(0, 4).map((f) => URL.createObjectURL(f)))} />
+          </label>
+          <select name="category_id" defaultValue="" aria-label="Topic">
+            <option value="">Topic (optional)</option>
+            {cats.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <span className="cm-count">{len ? `${len}/5000` : ""}</span>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -372,18 +451,20 @@ export default function CommunityFeed({ cats }: { cats: { id: number; name: stri
   const [sort, setSort] = useState<"for_you" | "latest">("for_you");
   const [cat, setCat] = useState(0);
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [page, setPage] = useState(1);
   const [more, setMore] = useState(true);
   const [busy, setBusy] = useState(false);
   const [compose, setCompose] = useState(false);
-  const [edit, setEdit] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
   const seed = useRef(0);
+  const closeCompose = useCallback(() => setCompose(false), []);
 
   const load = useCallback(
     async (reset: boolean) => {
       if (busy) return;
       setBusy(true);
+      setFailed(false);
       const pg = reset ? 1 : page;
       if (!seed.current) seed.current = Math.floor(Math.random() * 1e6);
       const d = await fetch(`/api/community/?page=${pg}&limit=10&sort=${sort}&category_id=${cat}&seed=${seed.current}`)
@@ -393,7 +474,10 @@ export default function CommunityFeed({ cats }: { cats: { id: number; name: stri
         setPosts((old) => (reset ? d.posts : [...(old || []), ...d.posts]));
         setMore(d.has_more);
         setPage(pg + 1);
-      } else if (reset) setPosts([]);
+      } else {
+        setFailed(true);
+        if (reset) setPosts([]);
+      }
       setBusy(false);
     },
     [busy, page, sort, cat],
@@ -411,257 +495,172 @@ export default function CommunityFeed({ cats }: { cats: { id: number; name: stri
   }, [sort, cat]);
 
   useEffect(() => {
-    if (!sentinel.current || !more) return;
+    if (!sentinel.current || !more || failed) return;
     const io = new IntersectionObserver((e) => e[0].isIntersecting && posts && !busy && load(false), { rootMargin: "500px" });
     io.observe(sentinel.current);
     return () => io.disconnect();
-  }, [more, posts, busy, load]);
+  }, [more, failed, posts, busy, load]);
 
-  const avatar = member?.profile_pic ? mediaUrl(member.profile_pic) : DEFAULT_AVATAR;
-  const loginUrl = "/login/?return=/community/";
   return (
-    <>
-      <div className="comm-app">
-        <header className="comm-topbar comm-mobile-only">
-          <h1>Community</h1>
-          <div className="comm-topbar-actions">
-            <button type="button" className="comm-icon-btn" title="Refresh feed" onClick={() => load(true)}>
-              <i className="fa-solid fa-rotate-right"></i>
+    <div className="cm">
+      <header className="cm-top">
+        <h1>Community</h1>
+        {member ? (
+          <Link href={`/community/u/${encodeURIComponent(member.username)}/`} rel="nofollow" aria-label="My profile">
+            <Avatar src={member.profile_pic} name={member.name} size={32} />
+          </Link>
+        ) : me ? (
+          <Link href="/login/?return=/community/" className="cm-btn">
+            Sign in
+          </Link>
+        ) : null}
+      </header>
+      <nav className="cm-tabs" aria-label="Community sections">
+        <button type="button" className={sort === "for_you" ? "on" : ""} onClick={() => setSort("for_you")}>
+          For you
+        </button>
+        <button type="button" className={sort === "latest" ? "on" : ""} onClick={() => setSort("latest")}>
+          Latest
+        </button>
+        <Link href="/community/stories/" rel="nofollow">
+          Stories
+        </Link>
+      </nav>
+      {cats.length ? (
+        <div className="cm-chips" role="group" aria-label="Topics">
+          <button type="button" className={cat === 0 ? "on" : ""} onClick={() => setCat(0)}>
+            All
+          </button>
+          {cats.map((c) => (
+            <button key={c.id} type="button" className={cat === c.id ? "on" : ""} onClick={() => setCat(c.id)}>
+              {c.name}
             </button>
-            {member ? (
-              <Link href={`/community/u/${encodeURIComponent(member.username)}/`} rel="nofollow">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={avatar} alt="" className="comm-avatar-btn" />
-              </Link>
-            ) : me ? (
-              <Link href={loginUrl} className="comm-btn comm-btn-primary comm-btn-sm">
-                Sign in
-              </Link>
+          ))}
+        </div>
+      ) : null}
+
+      {member ? (
+        <button type="button" className="cm-compose" onClick={() => setCompose(true)}>
+          <Avatar src={member.profile_pic} name={member.name} size={36} />
+          <span>Share something…</span>
+          <b>Post</b>
+        </button>
+      ) : me ? (
+        <div className="cm-guest">
+          <span>Sign in to post, like and comment.</span>
+          <Link href="/register/?return=/community/" className="cm-link">
+            Create account
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="cm-feed" aria-busy={posts === null}>
+        {posts === null ? (
+          <Skeletons />
+        ) : !posts.length ? (
+          <div className="cm-empty">
+            <p>{failed ? "Could not load posts. Check your internet." : "Nothing here yet. Be the first to post."}</p>
+            {failed ? (
+              <button type="button" className="cm-btn ghost" onClick={() => load(true)}>
+                Try again
+              </button>
             ) : null}
           </div>
-        </header>
-
-        <aside className="comm-sidebar comm-desktop-only">
-          <div className="comm-panel comm-profile-card">
-            {member ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={avatar} alt="" className="avatar" />
-                <div className="name">{member.name}</div>
-                <div className="handle">@{member.username}</div>
-                {member.bio ? <div className="bio">{member.bio}</div> : null}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-                  <Link href={`/community/u/${encodeURIComponent(member.username)}/`} className="comm-btn comm-btn-primary comm-btn-block" rel="nofollow">
-                    My Profile
-                  </Link>
-                  <button type="button" className="comm-btn comm-btn-ghost comm-btn-block" onClick={() => setEdit(true)}>
-                    Edit Profile
-                  </button>
-                  <button
-                    type="button"
-                    className="comm-btn comm-btn-ghost comm-btn-block"
-                    style={{ color: "#dc2626" }}
-                    onClick={async () => {
-                      await fetch("/api/auth/logout/", { method: "POST" });
-                      location.href = "/login/";
-                    }}
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="name" style={{ marginBottom: 6 }}>
-                  Welcome
-                </div>
-                <p style={{ fontSize: ".88rem", color: "#64748b", lineHeight: 1.5, margin: "0 0 14px" }}>Sign in to post, like, and comment with readers.</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <Link href={loginUrl} className="comm-btn comm-btn-primary comm-btn-block">
-                    Sign In
-                  </Link>
-                  <Link href="/register/?return=/community/" className="comm-btn comm-btn-ghost comm-btn-block">
-                    Create Account
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="comm-panel">
-            <div className="comm-panel-title">Community Rules</div>
-            <ul className="comm-rules">
-              <li>Be respectful to others</li>
-              <li>Share original or credited content</li>
-              <li>No spam or abusive posts</li>
-              <li>Tag a category for better reach</li>
-            </ul>
-          </div>
-        </aside>
-
-        <div className="comm-main">
-          <div className="comm-tabs">
-            <button type="button" className={`comm-tab${sort === "for_you" ? " active" : ""}`} onClick={() => setSort("for_you")}>
-              For You
-            </button>
-            <button type="button" className={`comm-tab${sort === "latest" ? " active" : ""}`} onClick={() => setSort("latest")}>
-              Latest
+        ) : (
+          posts.map((p) => <PostCard key={p.id} post={p} me={member} toast={show} onDeleted={(id) => setPosts((l) => (l || []).filter((x) => x.id !== id))} />)
+        )}
+        {posts?.length && failed ? (
+          <div className="cm-empty">
+            <button type="button" className="cm-btn ghost" onClick={() => load(false)}>
+              Load more
             </button>
           </div>
-          <div className="comm-chips">
-            <button type="button" className={`comm-chip${cat === 0 ? " active" : ""}`} onClick={() => setCat(0)}>
-              All
-            </button>
-            {cats.map((c) => (
-              <button key={c.id} type="button" className={`comm-chip${cat === c.id ? " active" : ""}`} onClick={() => setCat(c.id)}>
-                {c.name}
-              </button>
-            ))}
-          </div>
-          {member ? (
-            <div className="comm-composer-wrap">
-              <button type="button" className="comm-composer-trigger" onClick={() => setCompose(true)}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={avatar} alt="" />
-                <span>What&apos;s on your mind, {member.name.split(" ")[0]}?</span>
-              </button>
-              <div className="comm-composer-quick">
-                <button type="button" onClick={() => setCompose(true)}>
-                  <i className="fa-solid fa-image" style={{ color: "#16a34a" }}></i> Photo
-                </button>
-                <button type="button" onClick={() => setCompose(true)}>
-                  <i className="fa-solid fa-quote-left" style={{ color: "#2563eb" }}></i> Quote
-                </button>
-                <Link href={`/community/u/${encodeURIComponent(member.username)}/`} rel="nofollow">
-                  <i className="fa-solid fa-chart-simple" style={{ color: "#d97706" }}></i> My stats
-                </Link>
-              </div>
-            </div>
-          ) : me ? (
-            <div className="comm-guest-banner">
-              <p>
-                <strong>Join the conversation</strong>
-                <br />
-                Sign in to post, like, and comment with other readers.
-              </p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Link href={loginUrl} className="comm-btn comm-btn-primary comm-btn-sm">
-                  Sign In
-                </Link>
-                <Link href="/register/?return=/community/" className="comm-btn comm-btn-ghost comm-btn-sm">
-                  Create Account
-                </Link>
-              </div>
-            </div>
-          ) : null}
-          <div className="comm-feed">
-            {posts === null ? (
-              <Skeletons />
-            ) : !posts.length ? (
-              <div className="comm-empty">
-                <i className="fa-regular fa-comment-dots"></i>
-                <p>No posts yet. Be the first to share something!</p>
-              </div>
-            ) : (
-              posts.map((p) => <PostCard key={p.id} post={p} me={member} toast={show} onDeleted={(id) => setPosts((l) => (l || []).filter((x) => x.id !== id))} />)
-            )}
-          </div>
-          <div className="comm-sentinel" ref={sentinel}></div>
-        </div>
-
-        <aside className="comm-sidebar comm-desktop-only">
-          <div className="comm-panel">
-            <div className="comm-panel-title">Browse Categories</div>
-            <ul className="comm-link-list">
-              {cats.slice(0, 12).map((c) => (
-                <li key={c.id}>
-                  <Link href={`/${c.slug}/`} rel="nofollow">
-                    {c.name} <i className="fa-solid fa-chevron-right" style={{ fontSize: ".7rem", opacity: 0.4 }}></i>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
+        ) : null}
+        {posts?.length && !more ? <p className="cm-end">You&apos;re all caught up</p> : null}
       </div>
-      {member ? <Composer open={compose} onClose={() => setCompose(false)} cats={cats} onPosted={() => load(true)} toast={show} /> : null}
-      {edit && member ? <EditProfileModal member={member} onClose={() => setEdit(false)} /> : null}
+      <div ref={sentinel}></div>
+      {member ? <Composer open={compose} onClose={closeCompose} cats={cats} onPosted={() => load(true)} toast={show} /> : null}
       {el}
-    </>
+    </div>
   );
 }
 
-export function SinglePost({ post }: { post: FeedPost }) {
+export function SinglePost({ post, bare = false }: { post: FeedPost; bare?: boolean }) {
   const me = useMe();
   const { show, el } = useToast();
   return (
     <>
-      <PostCard post={post} me={me?.member || null} toast={show} defaultOpen onDeleted={() => (location.href = "/community/")} style={{ borderRadius: 16, border: "1px solid #e8ecf1", marginBottom: 12 }} />
+      <PostCard post={post} me={me?.member || null} toast={show} defaultOpen full bare={bare} onDeleted={() => (location.href = "/community/")} />
       {el}
     </>
   );
 }
 
-export function ProfileOwnerActions({ username }: { username: string }) {
+/** Profile buttons: the owner gets Edit + Sign out, everyone else gets Share. */
+export function ProfileActions({ username, name }: { username: string; name: string }) {
   const me = useMe();
+  const { show, el } = useToast();
   const [edit, setEdit] = useState(false);
-  if (!me?.member || me.member.username !== username) return null;
+  const owner = me?.member?.username === username;
+  const share = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: name, url: location.href });
+      else {
+        await navigator.clipboard.writeText(location.href);
+        show("Profile link copied");
+      }
+    } catch {}
+  };
   return (
-    <>
-      <button type="button" className="comm-btn comm-btn-ghost comm-btn-sm" onClick={() => setEdit(true)}>
-        <i className="fa-solid fa-pen"></i> Edit
+    <div className="cm-pf-actions">
+      {owner ? (
+        <button type="button" className="cm-btn ghost" onClick={() => setEdit(true)}>
+          Edit profile
+        </button>
+      ) : null}
+      <button type="button" className="cm-btn ghost" onClick={share}>
+        Share
       </button>
-      {edit ? <EditProfileModal member={me.member} onClose={() => setEdit(false)} /> : null}
-    </>
+      {owner ? (
+        <button
+          type="button"
+          className="cm-btn ghost"
+          onClick={async () => {
+            await fetch("/api/auth/logout/", { method: "POST" });
+            location.href = "/community/";
+          }}
+        >
+          Sign out
+        </button>
+      ) : null}
+      {edit && me?.member ? <EditProfileModal member={me.member} onClose={() => setEdit(false)} /> : null}
+      {el}
+    </div>
   );
 }
 
-/** A member's posts on their profile — same cards (like, comment, share) as the feed. */
+/** A member's posts on their profile — same cards as the feed. */
 export function ProfilePosts({ posts, owner }: { posts: FeedPost[]; owner: boolean }) {
   const me = useMe();
   const { show, el } = useToast();
   const [list, setList] = useState(posts);
   if (!list.length)
     return (
-      <div className="comm-empty cp-card">
-        <i className="fa-regular fa-pen-to-square"></i>
-        <p>{owner ? "You haven't posted yet. Share a quote or a thought about a novel!" : "No posts yet."}</p>
+      <div className="cm-empty">
+        <p>{owner ? "You haven't posted yet." : "No posts yet."}</p>
         {owner ? (
-          <Link href="/community/?compose=1" className="comm-btn comm-btn-primary comm-btn-sm" rel="nofollow">
-            Create your first post
+          <Link href="/community/?compose=1" className="cm-btn" rel="nofollow">
+            Write your first post
           </Link>
         ) : null}
       </div>
     );
   return (
-    <>
+    <div className="cm-feed">
       {list.map((p) => (
         <PostCard key={p.id} post={p} me={me?.member || null} toast={show} onDeleted={(id) => setList((l) => l.filter((x) => x.id !== id))} />
       ))}
       {el}
-    </>
-  );
-}
-
-export function ProfileShare({ name }: { name: string }) {
-  const { show, el } = useToast();
-  return (
-    <>
-      <button
-        type="button"
-        className="comm-btn comm-btn-primary comm-btn-sm"
-        onClick={async () => {
-          try {
-            if (navigator.share) await navigator.share({ title: name, url: location.href });
-            else {
-              await navigator.clipboard.writeText(location.href);
-              show("Profile link copied");
-            }
-          } catch {}
-        }}
-      >
-        <i className="fa-solid fa-share"></i> Share profile
-      </button>
-      {el}
-    </>
+    </div>
   );
 }

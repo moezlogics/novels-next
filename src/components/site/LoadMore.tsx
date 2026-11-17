@@ -4,33 +4,42 @@ import { useEffect, useRef, useState } from "react";
 import type { PostCard } from "@/lib/types";
 import { placeholderCover, thumbUrl } from "@/lib/utils";
 
-/** "Load More" + infinite scroll (new) — appends cards into the same grid. */
+/**
+ * Infinite scroll: the next page of novels is added to the same grid when the reader
+ * gets near the end. No button and no page numbers on screen. (Search engines still
+ * reach every page through the plain page links that stay in the HTML.)
+ */
 export default function LoadMore({ query, totalPages, start = 1 }: { query: string; totalPages: number; start?: number }) {
   const [page, setPage] = useState(start);
   const [items, setItems] = useState<PostCard[]>([]);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
   const done = page >= totalPages;
 
   const load = async () => {
     if (busy || done) return;
     setBusy(true);
+    setFailed(false);
     try {
       const r = await fetch(`/api/archive/?${query}&page=${page + 1}`);
+      if (!r.ok) throw new Error();
       const d: { items: PostCard[] } = await r.json();
       setItems((x) => [...x, ...(d.items || [])]);
       setPage((p) => p + 1);
-    } catch {}
+    } catch {
+      setFailed(true);
+    }
     setBusy(false);
   };
 
   useEffect(() => {
-    if (done || !sentinel.current || page < start + 1) return; // first click is manual, then auto
-    const io = new IntersectionObserver((e) => e[0].isIntersecting && load(), { rootMargin: "600px" });
+    if (done || failed || !sentinel.current) return;
+    const io = new IntersectionObserver((e) => e[0].isIntersecting && load(), { rootMargin: "700px" });
     io.observe(sentinel.current);
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, done, busy]);
+  }, [page, done, busy, failed]);
 
   return (
     <>
@@ -46,10 +55,18 @@ export default function LoadMore({ query, totalPages, start = 1 }: { query: stri
       ))}
       <div ref={sentinel} className="col-span-full" />
       {!done ? (
-        <div className="col-span-full mt-12 text-center">
-          <button className="btn-brand" onClick={load} disabled={busy}>
-            Load More {busy ? <i className="fa-solid fa-spinner fa-spin"></i> : null}
-          </button>
+        <div className="col-span-full kn-inf" role="status" aria-live="polite">
+          {failed ? (
+            <button type="button" onClick={load}>
+              Could not load more novels. Tap to try again
+            </button>
+          ) : (
+            <span className="kn-inf-dots" aria-label="Loading more novels">
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+          )}
         </div>
       ) : null}
     </>

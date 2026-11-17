@@ -126,6 +126,36 @@ export interface CommunityPost {
   likes_count?: number;
   comments_count?: number;
   views?: number; // times the post was seen in the feed by other people
+  /** set when the post announces a story episode (the episode's likes and comments live on this post) */
+  story?: { id: number; n: number; title: string; ep: string };
+}
+
+/** A member's own novel, written in text, published episode by episode. */
+export interface Story {
+  _id: number;
+  member_id: number;
+  title: string;
+  description: string;
+  cover: string;
+  category_id: number | null;
+  status: "ongoing" | "complete";
+  episodes: number;
+  views: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface StoryEpisode {
+  _id: number;
+  story_id: number;
+  member_id: number;
+  n: number; // episode number, 1-based
+  title: string;
+  content: string;
+  views: number;
+  post_id: number; // the feed post that carries this episode's likes and comments
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface CommunityLike {

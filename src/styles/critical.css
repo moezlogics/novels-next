@@ -149,18 +149,21 @@ img{-webkit-user-drag:none}
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* WhatsApp Channel: floating "Join Channel" button */
-.kn-wa-fab{position:fixed;right:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:900;width:74px;height:74px;display:flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
-@media(min-width:1024px){.kn-wa-fab{bottom:24px;right:20px}}
-.kn-wa-ring{position:absolute;inset:0;width:100%;height:100%;fill:#128c4b;font:800 10.5px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.06em;animation:knWaSpin 14s linear infinite;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
-.kn-wa-dot{position:relative;width:44px;height:44px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.18);transition:transform .15s}
+.kn-wa-fab{position:fixed;right:4px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:900;width:94px;height:94px;display:flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
+@media(min-width:1024px){.kn-wa-fab{bottom:20px;right:16px}}
+.kn-wa-ring{position:absolute;inset:0;width:100%;height:100%;fill:#128c4b;font:800 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.05em;transform:rotate(-42deg);filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
+.kn-wa-dot{position:relative;width:46px;height:46px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.18);transition:transform .15s}
 .kn-wa-dot i{width:28px;height:28px}
 .kn-wa-fab:hover .kn-wa-dot,.kn-wa-fab:active .kn-wa-dot{transform:scale(1.07)}
-@keyframes knWaSpin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.kn-wa-ring{animation:none}}
 body.reader-open .kn-wa-fab,body.page-shop-app .kn-wa-fab.kn-hide-shop{display:none}
 /* novel page button */
-.sp-btn-wa{background:#25d366!important;color:#fff!important;border:0!important}
-.sp-btn-wa i{width:1.2em;height:1.2em}
+.sp-wa-under{margin-top:8px;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;max-width:100%;box-sizing:border-box;min-width:0;overflow:hidden;padding:7px 6px;border-radius:8px;background:#e9f9ef;color:#0e7a41;font-weight:700;font-size:.78rem;line-height:1.2;text-decoration:none;border:1px solid #bfe9cf;white-space:nowrap}
+.sp-wa-under i{width:1.2em;height:1.2em;color:#25d366;flex:none}
+.sp-wa-under span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sp-wa-under:hover{background:#dcf5e6;color:#0e7a41}
+.sp-wa-long{display:none}
+@media(min-width:501px){.sp-wa-short{display:none}.sp-wa-long{display:inline}.sp-wa-under{font-size:.82rem}}
+@media(min-width:768px){.sp-wa-under{font-size:.92rem;padding:9px 8px;margin-top:10px;gap:7px}}
 /* episodes on the novel page */
 .sp-episodes{margin:18px 0 6px}
 .sp-episodes-title{display:flex;align-items:center;gap:8px;font-size:1.05rem;font-weight:800;color:#0f172a;margin:0 0 10px}
@@ -176,4 +179,16 @@ body.reader-open .kn-wa-fab,body.page-shop-app .kn-wa-fab.kn-hide-shop{display:n
 .sp-ep-dl{background:#f1f5f9;color:#1e293b;padding:0 10px}
 .sp-ep-ext{background:#fff;color:#1e293b;border:1.5px solid #cbd5e1}
 @media(max-width:480px){.sp-episode{flex-wrap:wrap}.sp-episode-actions{width:100%;justify-content:stretch}.sp-ep-read,.sp-ep-ext{flex:1;justify-content:center}}
-@media(min-width:1024px){.kn-wa-fab{width:88px;height:88px}.kn-wa-dot{width:52px;height:52px}}
+@media(min-width:1024px){.kn-wa-fab{width:108px;height:108px}.kn-wa-dot{width:54px;height:54px}}
+
+/* archive pages: infinite scroll. The page links stay in the HTML for search engines and
+   screen readers but are not drawn; without JavaScript they show again (see <noscript>). */
+.kn-pages{position:absolute!important;width:1px;height:1px;margin:-1px!important;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.kn-inf{display:flex;justify-content:center;padding:18px 0 6px;min-height:44px}
+.kn-inf button{background:none;border:0;font:inherit;font-size:.9rem;font-weight:600;color:var(--theme-primary);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.kn-inf-dots{display:inline-flex;gap:6px;align-items:center}
+.kn-inf-dots i{width:8px;height:8px;border-radius:50%;background:#cbd5e1;animation:knInf 1s ease-in-out infinite}
+.kn-inf-dots i:nth-child(2){animation-delay:.15s}.kn-inf-dots i:nth-child(3){animation-delay:.3s}
+@keyframes knInf{50%{opacity:.3;transform:scale(.7)}}
+@media (prefers-reduced-motion:reduce){.kn-inf-dots i{animation:none}}
+.kn-first{display:block;text-align:center;margin:18px 0 0;font-size:.9rem;font-weight:600;color:var(--theme-primary)}

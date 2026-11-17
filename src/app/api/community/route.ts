@@ -90,6 +90,7 @@ export async function DELETE(req: Request) {
   const posts = await col.communityPosts();
   const p = await posts.findOne({ _id: id });
   if (!p || p.member_id !== m._id) return Response.json({ error: "You can only delete your own posts." }, { status: 403 });
+  if (p.story) return Response.json({ error: "This is a story episode. Delete it from the story page." }, { status: 400 });
   await posts.deleteOne({ _id: id });
   await (await col.communityLikes()).deleteMany({ post_id: id });
   await (await col.communityComments()).deleteMany({ post_id: id });

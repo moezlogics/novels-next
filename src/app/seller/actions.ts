@@ -43,7 +43,6 @@ export async function sellerRegister(_: FormState, fd: FormData): Promise<FormSt
   if (!phoneOk(values.phone)) errors.push("Enter a valid Pakistani mobile number (03xx xxxxxxx). Only the admin and your buyers' orders use it — it is never shown publicly.");
   const pw = String(fd.get("password") || "");
   if (pw.length < 8) errors.push("Password must be at least 8 characters.");
-  if (pw !== String(fd.get("password2") || "")) errors.push("The two passwords do not match.");
   if (fd.get("terms") !== "1") errors.push("Please accept the seller rules.");
   errors.push(...checkStoreProfile({ store_name: values.store_name, bio: "", return_policy: "", city: values.city }));
   const sellers = await col.sellers();

@@ -91,7 +91,19 @@ export default async function ArchiveView({ kind, id, search, page = 1 }: { kind
           )}
           {totalPages > page ? <LoadMore query={query.toString()} totalPages={totalPages} start={page} /> : null}
         </div>
-        {slug && totalPages > 1 ? <PageLinks base={`/${slug}/`} page={page} pages={totalPages} /> : null}
+        {slug && page > 1 ? (
+          <a href={`/${slug}/`} className="kn-first">
+            ‹ Back to the first page
+          </a>
+        ) : null}
+        {slug && totalPages > 1 ? (
+          <>
+            <PageLinks base={`/${slug}/`} page={page} pages={totalPages} />
+            <noscript>
+              <style>{`.kn-pages{position:static!important;width:auto;height:auto;margin:22px 0 0!important;overflow:visible;clip-path:none;white-space:normal}`}</style>
+            </noscript>
+          </>
+        ) : null}
       </div>
 
       {bottom ? (

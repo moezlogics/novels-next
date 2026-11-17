@@ -43,6 +43,11 @@ export default async function SellerHome({ searchParams }: { searchParams: Promi
   const orders30 = st.days.reduce((a, d) => a + d.orders, 0);
   const rev30 = st.days.reduce((a, d) => a + d.revenue, 0);
   const reviewFirst = s.seller_review_first ?? 3;
+  const steps = [
+    { label: "Set up your store", hint: "Logo, a short intro and your delivery charges.", href: "/seller/store/", done: !!(seller.logo || seller.bio) },
+    { label: "Add your first book", hint: `Photo, title, price and stock. The first ${reviewFirst} books are checked by an admin.`, href: "/seller/products/new/", done: st.products.total > 0 },
+    { label: "Your book goes live", hint: "After approval it appears in the shop and buyers can order.", href: "/seller/products/", done: st.products.active > 0 },
+  ];
 
   return (
     <>
@@ -54,17 +59,28 @@ export default async function SellerHome({ searchParams }: { searchParams: Promi
         </Link>
       </h1>
 
+      {steps.some((x) => !x.done) ? (
+        <div className="sl-card sl-start">
+          <h2>Get started</h2>
+          {steps.map((x, i) => (
+            <Link key={x.label} href={x.href} className={x.done ? "done" : ""}>
+              <span className="n">{x.done ? <i className="fa-solid fa-check"></i> : i + 1}</span>
+              <span className="t">
+                <b>{x.label}</b>
+                <small>{x.hint}</small>
+              </span>
+              {x.done ? null : <i className="fa-solid fa-chevron-right"></i>}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
       {st.orders.pending ? (
         <div className="sl-alert warn">
           <b>
             {st.orders.pending} new order{st.orders.pending > 1 ? "s" : ""}
           </b>{" "}
           waiting for you. <Link href="/seller/orders/?status=pending">Pack and ship them →</Link>
-        </div>
-      ) : null}
-      {!st.products.total ? (
-        <div className="sl-alert info">
-          Start by adding your first book. Your first {reviewFirst} books are checked by an admin; after that, clean listings go live at once.
         </div>
       ) : null}
       {st.products.pending ? <div className="sl-alert info">{st.products.pending} book(s) waiting for admin review.</div> : null}
@@ -104,33 +120,38 @@ export default async function SellerHome({ searchParams }: { searchParams: Promi
           </small>
           <b>{st.sold}</b>
         </div>
-        <div className="sl-stat">
-          <small>
-            <i className="fa-solid fa-eye"></i>Product views
-          </small>
-          <b>{st.views.toLocaleString()}</b>
-        </div>
-        <div className="sl-stat">
-          <small>
-            <i className="fa-solid fa-percent"></i>Views → orders
-          </small>
-          <b>{st.conversion}%</b>
-        </div>
-        <div className="sl-stat">
-          <small>
-            <i className="fa-solid fa-circle-check"></i>Live books
-          </small>
-          <b>
-            {st.products.active}/{st.products.total}
-          </b>
-        </div>
-        <div className="sl-stat">
-          <small>
-            <i className="fa-solid fa-circle-xmark"></i>Cancelled
-          </small>
-          <b>{st.orders.cancelled || 0}</b>
-        </div>
       </div>
+      <details className="sl-more" style={{ marginBottom: 14 }}>
+        <summary>More numbers</summary>
+        <div className="sl-grid sl-g4">
+          <div className="sl-stat">
+            <small>
+              <i className="fa-solid fa-eye"></i>Product views
+            </small>
+            <b>{st.views.toLocaleString()}</b>
+          </div>
+          <div className="sl-stat">
+            <small>
+              <i className="fa-solid fa-percent"></i>Views → orders
+            </small>
+            <b>{st.conversion}%</b>
+          </div>
+          <div className="sl-stat">
+            <small>
+              <i className="fa-solid fa-circle-check"></i>Live books
+            </small>
+            <b>
+              {st.products.active}/{st.products.total}
+            </b>
+          </div>
+          <div className="sl-stat">
+            <small>
+              <i className="fa-solid fa-circle-xmark"></i>Cancelled
+            </small>
+            <b>{st.orders.cancelled || 0}</b>
+          </div>
+        </div>
+      </details>
 
       <div className="sl-grid sl-g2">
         <div className="sl-card">

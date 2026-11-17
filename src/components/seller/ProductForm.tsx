@@ -153,37 +153,40 @@ export default function ProductForm({ init, maxPhotos, minPrice, maxPrice }: { i
           <textarea id="description" name="description" rows={6} maxLength={5000} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What is the story about? Print quality, edition, anything a reader should know." />
           <small>Plain text. No phone numbers, links, emails or social handles — buyers order through the website.</small>
         </div>
-        <div className="sl-grid sl-g3">
-          <div className="sl-field">
-            <label htmlFor="binding">Binding</label>
-            <select id="binding" name="binding" defaultValue={val("binding", init.binding || "paperback")}>
-              <option value="paperback">Paperback</option>
-              <option value="hardcover">Hardcover</option>
-              <option value="">Other</option>
-            </select>
+        <details className="sl-more">
+          <summary>More details (optional) — binding, pages, ISBN, tags</summary>
+          <div className="sl-grid sl-g3">
+            <div className="sl-field">
+              <label htmlFor="binding">Binding</label>
+              <select id="binding" name="binding" defaultValue={val("binding", init.binding || "paperback")}>
+                <option value="paperback">Paperback</option>
+                <option value="hardcover">Hardcover</option>
+                <option value="">Other</option>
+              </select>
+            </div>
+            <div className="sl-field">
+              <label htmlFor="condition">Condition</label>
+              <select id="condition" name="condition" defaultValue={val("condition", init.condition || "new")}>
+                <option value="new">New</option>
+                <option value="used">Used</option>
+              </select>
+            </div>
+            <div className="sl-field">
+              <label htmlFor="pages_count">Pages</label>
+              <input id="pages_count" name="pages_count" type="number" inputMode="numeric" min={0} defaultValue={val("pages_count", init.pages_count || "")} />
+            </div>
           </div>
-          <div className="sl-field">
-            <label htmlFor="condition">Condition</label>
-            <select id="condition" name="condition" defaultValue={val("condition", init.condition || "new")}>
-              <option value="new">New</option>
-              <option value="used">Used</option>
-            </select>
+          <div className="sl-grid sl-g2">
+            <div className="sl-field">
+              <label htmlFor="isbn">ISBN (optional)</label>
+              <input id="isbn" name="isbn" maxLength={20} defaultValue={val("isbn", init.isbn)} />
+            </div>
+            <div className="sl-field">
+              <label htmlFor="tags">Tags (comma separated)</label>
+              <input id="tags" name="tags" maxLength={300} defaultValue={val("tags", (init.tags || []).join(", "))} placeholder="romantic, after marriage" />
+            </div>
           </div>
-          <div className="sl-field">
-            <label htmlFor="pages_count">Pages</label>
-            <input id="pages_count" name="pages_count" type="number" inputMode="numeric" min={0} defaultValue={val("pages_count", init.pages_count || "")} />
-          </div>
-        </div>
-        <div className="sl-grid sl-g2">
-          <div className="sl-field">
-            <label htmlFor="isbn">ISBN (optional)</label>
-            <input id="isbn" name="isbn" maxLength={20} defaultValue={val("isbn", init.isbn)} />
-          </div>
-          <div className="sl-field">
-            <label htmlFor="tags">Tags (comma separated)</label>
-            <input id="tags" name="tags" maxLength={300} defaultValue={val("tags", (init.tags || []).join(", "))} placeholder="romantic, after marriage" />
-          </div>
-        </div>
+        </details>
       </div>
 
       <div className="sl-card">

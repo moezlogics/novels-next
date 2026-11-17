@@ -1,6 +1,6 @@
 import "server-only";
 import { col } from "./db";
-import type { CommunityPost } from "./types";
+import type { CommunityPost, Story } from "./types";
 
 export interface FeedPost {
   id: number;
@@ -17,6 +17,40 @@ export interface FeedPost {
   comments_count: number;
   views: number;
   user_liked: boolean;
+  story?: { id: number; n: number; title: string; ep: string };
+}
+
+export interface StoryCard {
+  id: number;
+  title: string;
+  description: string;
+  cover: string;
+  status: "ongoing" | "complete";
+  episodes: number;
+  views: number;
+  updated_at: string;
+  member_id: number;
+  author_name: string;
+  author_username: string;
+}
+
+export async function hydrateStories(rows: Story[]): Promise<StoryCard[]> {
+  if (!rows.length) return [];
+  const members = await (await col.members()).find({ _id: { $in: [...new Set(rows.map((r) => r.member_id))] } }, { projection: { name: 1, username: 1 } }).toArray();
+  const mm = new Map(members.map((m) => [m._id, m]));
+  return rows.map((r) => ({
+    id: r._id,
+    title: r.title,
+    description: r.description || "",
+    cover: r.cover || "",
+    status: r.status,
+    episodes: r.episodes || 0,
+    views: r.views || 0,
+    updated_at: new Date(r.updated_at).toISOString(),
+    member_id: r.member_id,
+    author_name: mm.get(r.member_id)?.name || "Writer",
+    author_username: mm.get(r.member_id)?.username || "",
+  }));
 }
 
 export async function hydratePosts(posts: CommunityPost[], viewerId: number | null): Promise<FeedPost[]> {
@@ -52,6 +86,7 @@ export async function hydratePosts(posts: CommunityPost[], viewerId: number | nu
       comments_count: ccm.get(p._id) || 0,
       views: p.views || 0,
       user_liked: liked.has(p._id),
+      story: p.story,
     };
   });
 }

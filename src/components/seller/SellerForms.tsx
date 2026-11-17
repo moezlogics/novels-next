@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { sellerLogin, sellerRegister, sellerSaveAccount, type FormState } from "@/app/seller/actions";
 
@@ -41,6 +41,19 @@ export function SubmitBtn({ children, className = "sl-btn block", pending = "Ple
   );
 }
 
+/** Password box with a Show / Hide button. */
+function PwInput({ id, name, auto }: { id: string; name: string; auto: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="sl-pw">
+      <input id={id} name={name} type={show ? "text" : "password"} autoComplete={auto} minLength={8} required />
+      <button type="button" onClick={() => setShow((v) => !v)} aria-label={show ? "Hide password" : "Show password"}>
+        {show ? "Hide" : "Show"}
+      </button>
+    </div>
+  );
+}
+
 export function LoginForm() {
   const [state, action] = useActionState(sellerLogin, null);
   return (
@@ -52,7 +65,7 @@ export function LoginForm() {
       </div>
       <div className="sl-field">
         <label htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" autoComplete="current-password" required />
+        <PwInput id="password" name="password" auto="current-password" />
       </div>
       <SubmitBtn pending="Logging in…">
         <i className="fa-solid fa-right-to-bracket"></i> Log in
@@ -95,11 +108,8 @@ export function RegisterForm({ terms }: { terms: string }) {
       <div className="sl-grid sl-g2">
         <div className="sl-field">
           <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
-        </div>
-        <div className="sl-field">
-          <label htmlFor="password2">Repeat password</label>
-          <input id="password2" name="password2" type="password" autoComplete="new-password" minLength={8} required />
+          <PwInput id="password" name="password" auto="new-password" />
+          <small>At least 8 characters.</small>
         </div>
       </div>
       <input name="website" tabIndex={-1} autoComplete="off" style={{ position: "absolute", left: "-9999px" }} aria-hidden="true" />

@@ -71,11 +71,6 @@ export function LoginForm({ returnUrl }: { returnUrl: string }) {
           {error}
         </div>
       ) : null}
-      {loading ? (
-        <div className="auth-loading show">
-          <div className="acct-spinner"></div> Signing you in…
-        </div>
-      ) : null}
       <form
         className="auth-email-form"
         onSubmit={(e) => {
@@ -93,7 +88,7 @@ export function LoginForm({ returnUrl }: { returnUrl: string }) {
           <Password id="loginPassword" name="password" placeholder="Your password" auto="current-password" />
         </div>
         <button type="submit" className="acct-btn acct-btn-primary auth-submit-btn" disabled={loading}>
-          Sign In
+          {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
       <GoogleButton text="signin_with" onCredential={(c) => run("/api/auth/google/", { credential: c })} />
@@ -113,21 +108,16 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
           {error}
         </div>
       ) : null}
-      {loading ? (
-        <div className="auth-loading show">
-          <div className="acct-spinner"></div> Creating your account…
-        </div>
-      ) : null}
       <form
         className="auth-email-form"
         onSubmit={(e) => {
           e.preventDefault();
           const f = Object.fromEntries(new FormData(e.currentTarget));
-          run("/api/auth/register/", f);
+          run("/api/auth/register/", { ...f, password_confirm: f.password });
         }}
       >
         <div className="acct-field">
-          <label htmlFor="regName">Display name</label>
+          <label htmlFor="regName">Your name</label>
           <input type="text" id="regName" name="name" autoComplete="name" required maxLength={80} placeholder="e.g. Ali Khan" />
         </div>
         <div className="acct-field">
@@ -135,21 +125,11 @@ export function RegisterForm({ returnUrl }: { returnUrl: string }) {
           <input type="email" id="regEmail" name="email" autoComplete="email" required placeholder="you@example.com" />
         </div>
         <div className="acct-field">
-          <label htmlFor="regPhone">
-            Mobile number <span style={{ fontWeight: 500, color: "#94a3b8" }}>(optional)</span>
-          </label>
-          <input type="tel" id="regPhone" name="phone" autoComplete="tel" maxLength={20} placeholder="e.g. 03001234567" />
-        </div>
-        <div className="acct-field">
           <label htmlFor="regPassword">Password</label>
           <Password id="regPassword" name="password" placeholder="At least 8 characters" auto="new-password" />
         </div>
-        <div className="acct-field">
-          <label htmlFor="regPasswordConfirm">Confirm password</label>
-          <Password id="regPasswordConfirm" name="password_confirm" placeholder="Repeat password" auto="new-password" />
-        </div>
         <button type="submit" className="acct-btn acct-btn-primary auth-submit-btn" disabled={loading}>
-          Create Account
+          {loading ? "Creating account…" : "Create account"}
         </button>
       </form>
       <GoogleButton text="signup_with" onCredential={(c) => run("/api/auth/google/", { credential: c })} />

@@ -48,6 +48,8 @@ export const col = {
   communityPosts: () => coll<T.CommunityPost>("community_posts"),
   communityLikes: () => coll<T.CommunityLike>("community_likes"),
   communityComments: () => coll<T.CommunityComment>("community_comments"),
+  stories: () => coll<T.Story>("community_stories"),
+  storyEpisodes: () => coll<T.StoryEpisode>("community_story_episodes"),
   contact: () => coll<T.ContactQuery>("contact_queries"),
   media: () => coll<T.Media>("media"),
   menu: () => coll<T.MenuItem>("menu_items"),
@@ -105,6 +107,8 @@ async function ensureIndexes(db: Db) {
     db.collection("community_posts").createIndex({ created_at: -1 }),
     db.collection("community_likes").createIndex({ member_id: 1, post_id: 1 }, { unique: true }),
     db.collection("community_comments").createIndex({ post_id: 1 }),
+    db.collection("community_stories").createIndexes([{ key: { updated_at: -1 } }, { key: { member_id: 1, updated_at: -1 } }]),
+    db.collection("community_story_episodes").createIndex({ story_id: 1, n: 1 }, { unique: true }),
     db.collection("products").createIndexes([
       { key: { slug: 1 }, unique: true, sparse: true },
       { key: { status: 1, _id: -1 } },

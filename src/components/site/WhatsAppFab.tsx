@@ -5,20 +5,21 @@ export function WhatsAppGlyph({ className = "" }: { className?: string }) {
 
 /**
  * Floating "Join Channel" button (bottom right on every public page): the WhatsApp
- * logo in a green circle, with "JOIN CHANNEL" turning slowly around it.
+ * logo in a green circle, with "JOIN CHANNEL" written in a curve over it (it does not move).
  * Pure HTML/CSS — no JavaScript, so it never slows the page.
  */
 export default function WhatsAppFab({ url }: { url: string }) {
   if (!url) return null;
   return (
     <a href={url} target="_blank" rel="noopener" className="kn-wa-fab" aria-label="Join our WhatsApp Channel">
-      <svg className="kn-wa-ring" viewBox="0 0 100 100" aria-hidden="true">
+      <svg className="kn-wa-ring" viewBox="0 0 120 120" aria-hidden="true">
         <defs>
-          <path id="kn-wa-circle" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+          {/* full circle, starting at the bottom and going up the left side */}
+          <path id="kn-wa-arc" d="M60,103 A43,43 0 1,1 60.01,103" />
         </defs>
-        <text>
-          <textPath href="#kn-wa-circle" textLength="236" lengthAdjust="spacing">
-            JOIN CHANNEL • JOIN CHANNEL •
+        <text textAnchor="middle">
+          <textPath href="#kn-wa-arc" startOffset="50%">
+            JOIN CHANNEL
           </textPath>
         </text>
       </svg>

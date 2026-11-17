@@ -20,7 +20,8 @@ export async function uniqueUsername(seed: string): Promise<string> {
 /** Same JSON shape the PHP community_auth.php returned. */
 export function authSuccess(m: Member, isNew: boolean, returnUrl: string) {
   const needsPhone = isNew && !String(m.phone || "").trim();
-  let redirect = isNew ? "/account/" : safeReturn(returnUrl) || "/account/";
-  if (needsPhone) redirect = "/account/?need_phone=1";
+  // people go back to where they were (community, checkout…); the phone prompt only
+  // shows when they signed up from the account page itself
+  const redirect = safeReturn(returnUrl) || (needsPhone ? "/account/?need_phone=1" : "/account/");
   return Response.json({ status: "success", is_new: isNew, needs_phone: needsPhone, redirect, user: publicMember(m) });
 }
