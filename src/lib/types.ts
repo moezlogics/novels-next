@@ -92,6 +92,15 @@ export interface Comment {
   message: string;
   status: "pending" | "approved";
   created_at: Date;
+  /** Name of the person this reply answers (reply to a reply). */
+  reply_to?: string | null;
+  /** Id of the exact comment that was answered (the thread root is parent_id). */
+  reply_to_id?: number | null;
+  /** Hash of the normalised text: duplicate / copy-paste spam detection. */
+  msg_hash?: string;
+  /** Why the brain or the AI held this comment for review (admin only). */
+  flag_reason?: string;
+  spam_score?: number;
 }
 
 export interface Member {

@@ -28,11 +28,14 @@ async function reply(fd: FormData) {
   const parent = await (await col.comments()).findOne({ _id: int(fd, "id")! });
   const msg = str(fd, "message", 3000);
   if (!parent || !msg) back("/newlogin/comments/", "Write a reply first", "err");
+  const rootId = parent.parent_id || parent._id;
   await (await col.comments()).insertOne({
     _id: await nextId("comments"),
     post_id: parent.post_id,
     member_id: null,
-    parent_id: parent.parent_id || parent._id,
+    parent_id: rootId,
+    reply_to: parent._id !== rootId ? parent.name : null,
+    reply_to_id: parent._id,
     name: admin.username,
     email: admin.email,
     ip_address: "admin",
@@ -98,7 +101,8 @@ export default async function Comments({ searchParams }: { searchParams: Promise
                     ) : (
                       "deleted novel"
                     )}
-                    {c.parent_id ? " · reply" : ""}
+                    {c.reply_to ? ` · ↳ ${c.reply_to}` : c.parent_id ? " · reply" : ""}
+                    {c.flag_reason ? <span style={{ color: "#b45309", fontWeight: 600 }}> · {c.flag_reason}</span> : null}
                   </div>
                   <p style={{ margin: "8px 0 0", whiteSpace: "pre-line" }}>{c.message}</p>
                 </div>

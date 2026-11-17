@@ -209,35 +209,48 @@ export const getNovel = unstable_cache(
 export interface CommentView {
   id: number;
   parent_id: number | null;
+  reply_to: string;
   name: string;
   is_admin: boolean;
   message: string;
   created_at: string;
   avatar: string;
+  /** Only on the reader's own just-posted comment while it waits for review. */
+  pending?: boolean;
 }
 
-export const getComments = unstable_cache(
-  async (postId: number): Promise<CommentView[]> => {
-    const rows = await (await col.comments()).find({ post_id: postId, status: "approved" }).sort({ _id: 1 }).toArray();
-    const mids = [...new Set(rows.map((r) => r.member_id).filter((x): x is number => !!x))];
-    const members = mids.length ? await (await col.members()).find({ _id: { $in: mids } }, { projection: { profile_pic: 1 } }).toArray() : [];
-    const pics = new Map(members.map((m) => [m._id, m.profile_pic || ""]));
-    return rows.map((r) => {
-      const pic = r.member_id ? pics.get(r.member_id) || "" : "";
-      return {
-        id: r._id,
-        parent_id: r.parent_id ?? null,
-        name: r.name,
-        is_admin: !!r.is_admin,
-        message: r.message,
-        created_at: new Date(r.created_at).toISOString(),
-        avatar: pic && !/default_avatar/i.test(pic) ? pic : "",
-      };
-    });
-  },
-  ["comments-v1"],
-  { tags: ["content", "comments"], revalidate: 3600 },
-);
+export function toCommentView(r: { _id: number; parent_id: number | null; reply_to?: string | null; name: string; is_admin: boolean; message: string; created_at: Date }, avatar = ""): CommentView {
+  return {
+    id: r._id,
+    parent_id: r.parent_id ?? null,
+    reply_to: r.reply_to || "",
+    name: r.name,
+    is_admin: !!r.is_admin,
+    message: r.message,
+    created_at: new Date(r.created_at).toISOString(),
+    avatar: avatar && !/default_avatar/i.test(avatar) ? avatar : "",
+  };
+}
+
+async function loadComments(postId: number): Promise<CommentView[]> {
+  const rows = await (await col.comments())
+    .find({ post_id: postId, status: "approved" }, { projection: { email: 0, ip_address: 0, msg_hash: 0, flag_reason: 0 } })
+    .sort({ _id: 1 })
+    .limit(1000)
+    .toArray();
+  const mids = [...new Set(rows.map((r) => r.member_id).filter((x): x is number => !!x))];
+  const members = mids.length ? await (await col.members()).find({ _id: { $in: mids } }, { projection: { profile_pic: 1 } }).toArray() : [];
+  const pics = new Map(members.map((m) => [m._id, m.profile_pic || ""]));
+  return rows.map((r) => toCommentView(r, r.member_id ? pics.get(r.member_id) || "" : ""));
+}
+
+/** Cached per novel: a new comment only refreshes that novel's page, not the whole site. */
+export function getComments(postId: number): Promise<CommentView[]> {
+  return unstable_cache(() => loadComments(postId), ["comments-v2", String(postId)], {
+    tags: ["content", "comments", `comments-${postId}`],
+    revalidate: 3600,
+  })();
+}
 
 // ── Archives ─────────────────────────────────────────────────
 export const getCategory = unstable_cache(

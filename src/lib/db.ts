@@ -1,5 +1,7 @@
 import "server-only";
-import { MongoClient, type Db, type Document, type Collection } from "mongodb";
+import fs from "node:fs";
+import path from "node:path";
+import { MongoClient, BSON, type Db, type Document, type Collection } from "mongodb";
 import type * as T from "./types";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
@@ -84,7 +86,32 @@ export async function syncCounter(name: string, maxId: number) {
   await c.updateOne({ _id: name }, { $max: { seq: maxId } }, { upsert: true });
 }
 
+async function autoSeedIfEmpty(db: Db) {
+  try {
+    const [postsCount, settingsCount] = await Promise.all([
+      db.collection("posts").estimatedDocumentCount(),
+      db.collection("settings").estimatedDocumentCount(),
+    ]);
+    if (postsCount > 0 || settingsCount > 0) return;
+    const seedFile = path.resolve(process.cwd(), "data/seed.ejson");
+    if (!fs.existsSync(seedFile)) return;
+    console.log(`[db] Empty database detected — importing initial data from ${seedFile} …`);
+    const dump = BSON.EJSON.parse(fs.readFileSync(seedFile, "utf8")) as Record<string, Record<string, unknown>[]>;
+    for (const [name, docs] of Object.entries(dump)) {
+      if (!Array.isArray(docs) || !docs.length) continue;
+      const c = db.collection(name);
+      if ((await c.estimatedDocumentCount()) === 0) {
+        await c.insertMany(docs as never[], { ordered: false }).catch(() => {});
+      }
+    }
+    console.log("[db] Initial database seed completed ✓");
+  } catch (e) {
+    console.error("[db] Auto-seed error:", e);
+  }
+}
+
 async function ensureIndexes(db: Db) {
+  await autoSeedIfEmpty(db);
   await Promise.all([
     db.collection("posts").createIndexes([
       { key: { slug: 1 }, unique: true },
@@ -98,7 +125,12 @@ async function ensureIndexes(db: Db) {
     db.collection("writers").createIndex({ slug: 1 }, { unique: true }),
     db.collection("series").createIndex({ slug: 1 }, { unique: true }),
     db.collection("pages").createIndex({ slug: 1 }, { unique: true }),
-    db.collection("comments").createIndex({ post_id: 1, status: 1 }),
+    db.collection("comments").createIndexes([
+      { key: { post_id: 1, status: 1 } },
+      { key: { ip_address: 1, created_at: -1 } },
+      { key: { msg_hash: 1, created_at: -1 }, sparse: true },
+      { key: { status: 1, _id: -1 } },
+    ]),
     db.collection("members").createIndexes([
       { key: { email: 1 }, unique: true },
       { key: { username: 1 }, unique: true },

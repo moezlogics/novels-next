@@ -1,16 +1,7 @@
 import "server-only";
+import { checkComment, hasLink } from "./commentBrain";
 
-/** Port of lib/content_brain.php — link blocking + optional OpenAI moderation. */
-const LINK_PATTERNS = [
-  /https?:\/\//i,
-  /\bwww\./i,
-  /\b[a-z0-9][-a-z0-9]*\.(com|net|org|io|co|pk|in|me|app|dev|xyz|info|biz|ly|to|link|online|site|club|edu|gov)\b/i,
-  /\b(?:t\.me|wa\.me|bit\.ly|tinyurl|goo\.gl|telegram\.me)\b/i,
-];
-
-export function hasLink(text: string) {
-  return LINK_PATTERNS.some((p) => p.test(text));
-}
+export { hasLink };
 
 const PROMPTS = {
   community_post: `You are the content moderation brain for a novels & quotes community (English and Urdu).
@@ -29,6 +20,11 @@ export async function moderate(mode: "comment" | "community_post", text: string,
   text = text.trim();
   if (!text && !images.length) return { ok: false, reason: "Content cannot be empty." };
   if (text && hasLink(text)) return { ok: false, reason: "Links and URLs are not allowed." };
+  if (mode === "comment") {
+    const v = checkComment({ message: text });
+    if (v.action === "block") return { ok: false, reason: v.reason };
+    return { ok: true, reason: "" };
+  }
   const key = process.env.OPENAI_API_KEY;
   if (!key) return { ok: true, reason: "" };
   try {
@@ -54,8 +50,7 @@ export async function moderate(mode: "comment" | "community_post", text: string,
     if (out.allowed === false) return { ok: false, reason: out.reason || "This content is not allowed." };
     return { ok: true, reason: "" };
   } catch {
-    // Comments stay open if the AI is down; community posts fail safe
-    return mode === "comment" ? { ok: true, reason: "" } : { ok: false, reason: "Posting is temporarily unavailable. Please try again later." };
+    return { ok: false, reason: "Posting is temporarily unavailable. Please try again later." };
   }
 }
 

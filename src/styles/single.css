@@ -336,6 +336,29 @@
     display: inline-flex;
     align-items: center;
 }
+.sp-comment-pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+}
+.sp-comment-node.sp-comment-new > .sp-comment-content {
+    background: #f0fdf4;
+    border-color: #86efac;
+    transition: background-color 0.6s ease, border-color 0.6s ease;
+}
+.sp-reply-to {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--theme-secondary, #0e7490);
+    margin-bottom: 2px;
+}
 .sp-comment-date {
     font-size: 0.7rem;
     color: #94a3b8;
@@ -394,6 +417,74 @@
     border-radius: 10px;
     padding: 12px;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.sp-reply-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+}
+.sp-more-replies {
+    align-self: flex-start;
+    padding: 4px 0;
+    font-size: 0.78rem;
+}
+.sp-thread-msg {
+    margin-top: 6px;
+}
+.sp-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.sp-as {
+    font-size: 0.8rem;
+    color: #475569;
+    margin-bottom: 8px;
+}
+.sp-char {
+    font-size: 0.72rem;
+    color: #64748b;
+    text-align: right;
+    margin-top: 4px;
+}
+.sp-char.low {
+    color: #dc2626;
+    font-weight: 700;
+}
+.sp-form-foot {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+.sp-reply-form .sp-form-foot {
+    margin-top: 2px;
+}
+.sp-form-foot .sp-submit {
+    margin-top: 0;
+}
+.sp-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.sp-submit.sp-cancel {
+    background: #e2e8f0;
+    color: #334155;
+}
+.sp-rules {
+    font-size: 0.74rem;
+    color: #94a3b8;
+}
+.sp-load-more {
+    align-self: center;
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
 }
 
 /* â”€â”€ Comment Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

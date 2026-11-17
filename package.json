@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3115",
     "migrate": "tsx scripts/migrate.ts",
+    "db:export": "node scripts/db-seed.mjs export",
+    "db:import": "node scripts/db-seed.mjs import",
     "create-admin": "tsx scripts/create-admin.ts",
     "icons": "node tools/gen_icons.js",
-    "prebuild": "node scripts/icons-site.mjs"
+    "prebuild": "node scripts/icons-site.mjs && node scripts/db-seed.mjs import --if-empty"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
