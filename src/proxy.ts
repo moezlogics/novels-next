@@ -38,7 +38,7 @@ const STATIC_MAP: Record<string, string> = {
 };
 
 /** Top-level sections that have their own pages (never a category/writer slug). */
-const RESERVED = new Set(["search", "shop", "community", "categories", "about", "contact", "account", "login", "register", "newlogin", "seller", "saved", "api", "images", "uploads", "legacy", "rootfile"]);
+const RESERVED = new Set(["search", "shop", "community", "categories", "about", "contact", "account", "login", "register", "newlogin", "seller", "saved", "api", "images", "uploads", "legacy", "rootfile", "sitemaps"]);
 
 const LEGACY_DB = new Set(["/single.php", "/archive.php", "/page.php", "/reader.php", "/community_post.php", "/community_profile.php", "/shop/product.php", "/shop/success.php"]);
 
@@ -75,6 +75,13 @@ export function proxy(req: NextRequest) {
   // the internal address itself is never a public URL
   const internal = /^\/([a-z0-9][a-z0-9-]*)\/page\/(\d+)\/?$/.exec(pathname);
   if (internal) return NextResponse.redirect(new URL(`/${internal[1]}/?page=${internal[2]}`, req.url).toString(), 301);
+
+  // Paginated sub-sitemaps: /sitemap-posts-2.xml → /sitemaps/posts/2/
+  const sm = /^\/sitemap-(posts|categories|writers|pages|shop)-([1-9]\d*)\.xml$/.exec(pathname);
+  if (sm) {
+    if (sm[2] === "1") return NextResponse.redirect(new URL(`/sitemap-${sm[1]}.xml`, req.url).toString(), 301);
+    return NextResponse.rewrite(new URL(`/sitemaps/${sm[1]}/${sm[2]}/`, req.url).toString());
+  }
 
   // Root .js files uploaded from admin (LaraPush firebase-messaging-sw.js etc.)
   if (/^\/[\w.-]+\.js$/.test(pathname)) return NextResponse.rewrite(new URL(`/rootfile/${pathname.slice(1)}/`, req.url).toString());

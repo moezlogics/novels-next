@@ -18,6 +18,7 @@ export async function requireAdmin(mainOnly = false): Promise<AdminUser> {
 export function bustSite() {
   revalidateTag("content", { expire: 0 });
   revalidateTag("comments", { expire: 0 });
+  revalidateTag("sitemap", { expire: 0 });
   revalidatePath("/", "layout");
 }
 

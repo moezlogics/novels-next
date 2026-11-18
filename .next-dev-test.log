@@ -1,0 +1,24 @@
+▲ Next.js 16.4.5 (webpack)
+- Local:         http://localhost:3199
+- Network:       http://192.168.1.69:3199
+- Environments: .env.local
+✓ Ready in 1565ms
+✓ Running next.config.ts took 125ms
+- Experiments (use with caution):
+  · serverActions
+
+○ Compiling /sitemap.xml/route ...
+ GET /sitemap.xml 200 in 5.6s (next.js: 4.0s, proxy.ts: 158ms, application-code: 1366ms)
+ GET /sitemap.xml 200 in 23ms (next.js: 3ms, proxy.ts: 8ms, application-code: 12ms)
+ GET /sitemap.xml 200 in 22ms (next.js: 3ms, proxy.ts: 8ms, application-code: 11ms)
+ GET /sitemap.xml 200 in 102ms (next.js: 17ms, proxy.ts: 45ms, application-code: 40ms)
+ GET /sitemap.xml 200 in 65ms (next.js: 14ms, proxy.ts: 24ms, application-code: 27ms)
+ GET /sitemap.xml 200 in 35ms (next.js: 4ms, proxy.ts: 20ms, application-code: 11ms)
+ GET /sitemap.xml 200 in 20ms (next.js: 3ms, proxy.ts: 8ms, application-code: 9ms)
+ GET /sitemap-posts.xml 200 in 428ms (next.js: 374ms, proxy.ts: 8ms, application-code: 47ms)
+ GET /sitemap-categories.xml 200 in 266ms (next.js: 226ms, proxy.ts: 9ms, application-code: 31ms)
+ GET /sitemap-writers.xml 200 in 373ms (next.js: 320ms, proxy.ts: 11ms, application-code: 41ms)
+ GET /sitemap-pages.xml 200 in 281ms (next.js: 231ms, proxy.ts: 8ms, application-code: 42ms)
+ GET /sitemap-shop.xml 404 in 364ms (next.js: 330ms, proxy.ts: 8ms, application-code: 26ms)
+ GET /sitemap-posts-2.xml 404 in 2.5s (next.js: 2.4s, proxy.ts: 8ms, application-code: 51ms)
+ GET /robots.txt 200 in 356ms (next.js: 325ms, proxy.ts: 8ms, application-code: 23ms)

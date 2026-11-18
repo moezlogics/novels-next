@@ -17,6 +17,7 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 
 export function bustShop() {
   revalidateTag("shop", { expire: 0 });
+  revalidateTag("sitemap", { expire: 0 });
 }
 
 export async function uniqueProductSlug(base: string, exclude?: number) {
