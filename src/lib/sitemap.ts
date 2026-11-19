@@ -99,7 +99,6 @@ async function fetchPages() {
     .toArray();
   const out: UrlEntry[] = [
     { loc: "/", changefreq: "daily", priority: "1.0" },
-    { loc: "/categories/", changefreq: "weekly", priority: "0.8" },
     { loc: "/about/", changefreq: "monthly", priority: "0.5" },
     { loc: "/contact/", changefreq: "monthly", priority: "0.5" },
   ];

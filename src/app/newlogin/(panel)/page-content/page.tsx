@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { readSettingsUncached } from "@/lib/settings";
-import { Flash, RichText, Submit } from "@/components/admin/Fields";
+import { Flash, ImageField, RichText, Submit } from "@/components/admin/Fields";
 import { savePageContent } from "../settings-actions";
 import type { Settings } from "@/lib/types";
 
@@ -11,7 +11,6 @@ const TABS = [
   { k: "home", label: "Homepage", url: "/" },
   { k: "about", label: "About Us", url: "/about/" },
   { k: "contact", label: "Contact", url: "/contact/" },
-  { k: "categories", label: "Categories page", url: "/categories/" },
 ];
 
 export default async function PageContent({ searchParams }: { searchParams: Promise<{ ok?: string; tab?: string }> }) {
@@ -34,6 +33,13 @@ export default async function PageContent({ searchParams }: { searchParams: Prom
         <input type="hidden" name="tab" value={tab} />
         {tab === "home" ? (
           <>
+            <ImageField
+              name="homepage_featured_image"
+              current={v("homepage_featured_image")}
+              label="Homepage featured image (default share image)"
+              help="Shown when the homepage is shared on WhatsApp / Facebook (best 1200×630). Novel, writer and category pages use their own picture; any page without one uses this image."
+              wide
+            />
             <div className="a-field">
               <label>Bottom section title</label>
               <input type="text" name="homepage_content_title" defaultValue={v("homepage_content_title")} />

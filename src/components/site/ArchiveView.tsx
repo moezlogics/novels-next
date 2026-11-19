@@ -1,4 +1,6 @@
-import { getArchive, getCategory, getWriter } from "@/lib/data";
+import "@/styles/carousel.css";
+import { getArchive, getCarouselCategories, getCarouselWriters, getCategory, getWriter } from "@/lib/data";
+import RoundCarousel from "./RoundCarousel";
 import { breadcrumb } from "@/lib/seo";
 import { getSettings, siteUrl } from "@/lib/settings";
 import { stripTags } from "@/lib/utils";
@@ -52,7 +54,7 @@ export default async function ArchiveView({ kind, id, search, page = 1 }: { kind
     filter.search = search || "";
   }
 
-  const { items, totalPages, total } = await getArchive(filter, page, 12);
+  const [{ items, totalPages, total }, rail] = await Promise.all([getArchive(filter, page, 12), kind === "writer" ? getCarouselWriters() : kind === "category" ? getCarouselCategories() : Promise.resolve([])]);
   const query = new URLSearchParams();
   if (filter.categoryId) query.set("category", String(filter.categoryId));
   if (filter.writerId) query.set("writer", String(filter.writerId));
@@ -63,6 +65,11 @@ export default async function ArchiveView({ kind, id, search, page = 1 }: { kind
       {schema.map((d, i) => (
         <JsonLd key={i} data={d} />
       ))}
+      {kind !== "search" && rail.length ? (
+        <div className="global-container round-rail">
+          <RoundCarousel items={rail} active={slug} label={kind === "writer" ? "Writers" : "Categories"} />
+        </div>
+      ) : null}
       <div className="py-8 bg-slate-50/50 border-b border-slate-100/80">
         <div className="global-container">
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900" style={{ margin: 0 }}>

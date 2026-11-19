@@ -44,7 +44,7 @@ body.reader-open.has-mobile-nav {
   body.page-shop-app.has-mobile-nav { padding-bottom: 24px !important; }
 }
 
-.site-mobile-nav a,
+.site-mobile-nav a,.site-mobile-nav>button,
 .site-mobile-nav button {
   flex: 1;
   height: 44px;
@@ -64,26 +64,26 @@ body.reader-open.has-mobile-nav {
   gap: 1px;
 }
 
-.site-mobile-nav a span,
+.site-mobile-nav a span,.site-mobile-nav>button span,
 .site-mobile-nav button span {
   font-size: 0.58rem;
   font-weight: 500; /* Reduced boldness */
   display: block;
 }
 
-.site-mobile-nav a i,
+.site-mobile-nav a i,.site-mobile-nav>button i,
 .site-mobile-nav button i {
   font-size: 1.02rem; /* Reduced size */
   display: block;
 }
 
 /* Active State: Simple Theme Color */
-.site-mobile-nav a.active,
+.site-mobile-nav a.active,.site-mobile-nav>button.active,
 .site-mobile-nav button.active {
   color: var(--theme-secondary, #0e7490) !important;
 }
 
-.site-mobile-nav a:hover,
+.site-mobile-nav a:hover,.site-mobile-nav>button:hover,
 .site-mobile-nav button:hover {
   color: var(--theme-primary, #0f2c5c);
 }
@@ -97,3 +97,16 @@ body.reader-open.has-mobile-nav {
     bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+.site-mobile-nav>button{background:none;border:0;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+/* categories sheet (from the bottom tab bar) */
+.kn-cat-sheet-wrap{position:fixed;inset:0;z-index:8999;background:rgba(15,23,42,.35);display:flex;align-items:flex-end}
+.kn-cat-sheet{width:100%;max-height:70vh;overflow:auto;background:#fff;border-radius:18px 18px 0 0;padding:6px 16px calc(64px + env(safe-area-inset-bottom,0px));animation:knSheet .18s ease-out}
+@keyframes knSheet{from{transform:translateY(20px);opacity:0}}
+.kn-cat-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 0;position:sticky;top:0;background:#fff}
+.kn-cat-sheet-head b{font-size:1rem;color:#0f172a}
+.kn-cat-sheet-head button{width:36px;height:36px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;font-size:.9rem;cursor:pointer}
+.kn-cat-sheet-list{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:8px}
+.kn-cat-sheet-list a{padding:8px 14px;border-radius:999px;background:#f1f5f9;color:#1e293b;font-size:.88rem;font-weight:600;text-decoration:none}
+.kn-cat-sheet-list a.on{background:var(--theme-secondary);color:#fff}
+@media(min-width:1024px){.kn-cat-sheet-wrap{display:none}}

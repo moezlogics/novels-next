@@ -4,6 +4,7 @@ import HtmlShell from "@/components/HtmlShell";
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import MobileNav from "@/components/site/MobileNav";
+import { getCarouselCategories } from "@/lib/data";
 import Maintenance from "@/components/site/Maintenance";
 import ReaderHost from "@/components/reader/ReaderHost";
 import { getSettings } from "@/lib/settings";
@@ -21,7 +22,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
           <Header />
           <main id="app-container">{children}</main>
           <Footer />
-          <MobileNav community={!s.community_coming_soon} shop={!s.shop_coming_soon} />
+          <MobileNav community={!s.community_coming_soon} shop={!s.shop_coming_soon} cats={(await getCarouselCategories()).map((c) => ({ name: c.name, slug: c.slug }))} />
           {/* the novel reader stays alive while the visitor moves between pages */}
           <ReaderHost />
         </>

@@ -130,7 +130,7 @@ export function breadcrumb(base: string, items: { name: string; path: string }[]
   };
 }
 
-export function bookSchema(base: string, n: { title: string; slug: string; description: string; image: string; posted_date: string; writer?: { name: string; slug: string } | null; file_type: string; pages: number | null }) {
+export function bookSchema(base: string, n: { title: string; slug: string; description: string; image: string; posted_date: string; updated_at?: string; writer?: { name: string; slug: string } | null; file_type: string; pages: number | null }) {
   const url = `${base}/${n.slug}/`;
   return {
     "@context": "https://schema.org",
@@ -144,6 +144,7 @@ export function bookSchema(base: string, n: { title: string; slug: string; descr
     bookFormat: "https://schema.org/EBook",
     ...(n.pages ? { numberOfPages: n.pages } : {}),
     datePublished: n.posted_date,
+    ...(n.updated_at ? { dateModified: n.updated_at } : {}),
     author: { "@type": "Person", "@id": `${base}/writer/${n.writer?.slug || ""}/#author`, name: n.writer?.name || "" },
     publisher: { "@id": `${base}/#organization` },
     ...(n.file_type ? { potentialAction: { "@type": "ReadAction", target: [url] } } : {}),

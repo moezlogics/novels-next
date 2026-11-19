@@ -16,7 +16,6 @@ ${name} is an Urdu novel library. Visitors can browse novels by category or writ
 ## Main pages
 
 - [Home](${u}/): Latest uploads and category sections
-- [Categories](${u}/categories/): Browse all novel categories
 - [Search](${u}/search/): Search novels by title or keyword (?search=)
 - [About](${u}/about/): About the site
 - [Contact](${u}/contact/): Contact form and details

@@ -26,7 +26,7 @@ export default async function SeoHealth({ searchParams }: { searchParams: Promis
   const S = "/newlogin/settings/?tab=";
   if (!s.homepage_title) site.push({ level: "bad", what: "Homepage has no SEO title", fix: "Add a title of 50–60 characters", href: `${S}seo` });
   if (len(s.homepage_description) < 70) site.push({ level: "bad", what: "Homepage description is missing or too short", fix: "Write 120–160 characters about the site", href: `${S}seo` });
-  if (!s.homepage_featured_image && !s.site_logo) site.push({ level: "warn", what: "No share image", fix: "WhatsApp/Facebook previews show no picture — upload a 1200×630 image", href: `${S}seo` });
+  if (!s.homepage_featured_image && !s.site_logo) site.push({ level: "warn", what: "No share image", fix: "WhatsApp/Facebook previews show no picture — add the homepage featured image (1200×630)", href: "/newlogin/page-content/" });
   if (!s.google_verification && !/google-site-verification/.test(s.search_console || "")) site.push({ level: "warn", what: "Google Search Console is not verified here", fix: "Paste the verification code", href: `${S}seo` });
   if (!s.facebook_url && !s.instagram_url && !s.youtube_url && !s.tiktok_url) site.push({ level: "warn", what: "No social profiles", fix: "Add them so Google links the site to your profiles", href: `${S}contact` });
 

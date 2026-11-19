@@ -20,8 +20,8 @@ body::before{display:none!important}
 @media(max-width:768px){
   body.has-mobile-nav{padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
   .site-mobile-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:9000;height:calc(44px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:#fff;border-top:1px solid #e2e8f0;box-shadow:0 -4px 16px rgba(0,0,0,.06);align-items:center;justify-content:space-around;box-sizing:border-box}
-  .site-mobile-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:64px;color:#64748b;text-decoration:none;font-size:10px;font-weight:600;line-height:1.2}
-  .site-mobile-nav a.active{color:var(--theme-secondary)}
+  .site-mobile-nav a,.site-mobile-nav>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:64px;color:#64748b;text-decoration:none;font-size:10px;font-weight:600;line-height:1.2}
+  .site-mobile-nav a.active,.site-mobile-nav>button.active{color:var(--theme-secondary)}
   .site-mobile-nav .kn-ico{width:20px;height:20px}
 }
 body.page-shop-app{padding-top:0!important;background:#fff!important}
@@ -131,7 +131,7 @@ a,button,input,select,textarea,label,summary,[role=button]{touch-action:manipula
 body{overscroll-behavior-x:none}
 @media (hover:none){
   a:active>img,.shop-card:active,.novel-card:active,.kn-continue-card:active{transform:scale(.98);transition:transform .08s}
-  .sp-btn:active,.sp-submit:active,.cart-btn-checkout:active,.shop-chips a:active,.site-mobile-nav a:active{transform:scale(.96);transition:transform .08s}
+  .sp-btn:active,.sp-submit:active,.cart-btn-checkout:active,.shop-chips a:active,.site-mobile-nav a:active,.site-mobile-nav>button:active{transform:scale(.96);transition:transform .08s}
 }
 @media (prefers-reduced-motion:no-preference){
   @view-transition{navigation:auto}
@@ -149,9 +149,9 @@ img{-webkit-user-drag:none}
 .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* WhatsApp Channel: floating "Join Channel" button */
-.kn-wa-fab{position:fixed;right:4px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:900;width:94px;height:94px;display:flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
-@media(min-width:1024px){.kn-wa-fab{bottom:20px;right:16px}}
-.kn-wa-ring{position:absolute;inset:0;width:100%;height:100%;fill:#128c4b;font:800 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.05em;transform:rotate(-42deg);filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
+.kn-wa-fab{position:fixed;right:-22px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:900;width:94px;height:94px;display:flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
+@media(min-width:1024px){.kn-wa-fab{bottom:20px;right:-26px}}
+.kn-wa-ring{position:absolute;inset:0;width:100%;height:100%;fill:#128c4b;font:800 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.05em;transform:rotate(-58deg);filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
 .kn-wa-dot{position:relative;width:46px;height:46px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(37,211,102,.45),0 2px 6px rgba(0,0,0,.18);transition:transform .15s}
 .kn-wa-dot i{width:28px;height:28px}
 .kn-wa-fab:hover .kn-wa-dot,.kn-wa-fab:active .kn-wa-dot{transform:scale(1.07)}
@@ -192,3 +192,5 @@ body.reader-open .kn-wa-fab,body.page-shop-app .kn-wa-fab.kn-hide-shop{display:n
 @keyframes knInf{50%{opacity:.3;transform:scale(.7)}}
 @media (prefers-reduced-motion:reduce){.kn-inf-dots i{animation:none}}
 .kn-first{display:block;text-align:center;margin:18px 0 0;font-size:.9rem;font-weight:600;color:var(--theme-primary)}
+
+.kn-wa-fab.is-drag{cursor:grabbing}.kn-wa-fab.is-drag .kn-wa-dot{transform:scale(1.1);box-shadow:0 10px 26px rgba(37,211,102,.5),0 4px 10px rgba(0,0,0,.2)}

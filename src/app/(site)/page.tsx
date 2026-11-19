@@ -1,14 +1,15 @@
 import "@/styles/index.css";
+import "@/styles/carousel.css";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { preload } from "react-dom";
 import { thumbUrl } from "@/lib/utils";
 import { getSettings, siteUrl } from "@/lib/settings";
-import { getCarouselCategories, getPostsByIdsOrdered, getRecentPosts, getTrendingPosts } from "@/lib/data";
+import { getCarouselCategories, getCarouselWriters, getPostsByIdsOrdered, getRecentPosts, getTrendingPosts } from "@/lib/data";
 import { buildMeta } from "@/lib/seo";
 import BookCard from "@/components/site/BookCard";
 import JsonLd from "@/components/JsonLd";
-import { Banners, CategoryCarousel } from "@/components/site/HomeClient";
+import { Banners } from "@/components/site/HomeClient";
+import RoundCarousel from "@/components/site/RoundCarousel";
 
 export const revalidate = 3600;
 
@@ -20,8 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const s = await getSettings();
-  const [cats, recent, famous, trending] = await Promise.all([
+  const [cats, writers, recent, famous, trending] = await Promise.all([
     getCarouselCategories(),
+    getCarouselWriters(),
     getRecentPosts(8),
     getPostsByIdsOrdered((s.homepage_famous_ids || []).slice(0, 24)),
     getTrendingPosts(8),
@@ -51,12 +53,7 @@ export default async function HomePage() {
       {cats.length ? (
         <div style={{ width: "100%", padding: "10px 0", position: "relative", boxSizing: "border-box", margin: 0 }}>
           <div className="global-container relative">
-            <CategoryCarousel cats={cats} />
-            <div className="cat-view-all-wrap">
-              <Link href="/categories/" className="cat-view-all-link">
-                View All
-              </Link>
-            </div>
+            <RoundCarousel items={cats} label="Categories" />
           </div>
         </div>
       ) : null}
@@ -110,6 +107,15 @@ export default async function HomePage() {
         ) : null}
 
         {!recent.length && !famous.length ? <p className="py-10 text-center text-slate-500">No posts available at the moment.</p> : null}
+
+        {writers.length ? (
+          <section className="round-rail mt-6" aria-label="Writers">
+            <h2 className="font-headline-sm text-headline-sm font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2">
+              <i className="fa-solid fa-user-pen text-primary"></i> Writers
+            </h2>
+            <RoundCarousel items={writers} label="Writers" eager={0} />
+          </section>
+        ) : null}
 
         {s.homepage_content || s.homepage_content_title ? (
           <section className="home-bottom-content mt-8 md:mt-10 pt-6 border-t border-slate-200" aria-label="Homepage content">

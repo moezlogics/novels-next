@@ -26,8 +26,8 @@ export default function NotFound() {
           <Link href="/" className="error-404__btn error-404__btn--primary">
             Home
           </Link>
-          <Link href="/categories/" className="error-404__btn error-404__btn--ghost">
-            Categories
+          <Link href="/search/" className="error-404__btn error-404__btn--ghost">
+            Search novels
           </Link>
         </div>
       </div>

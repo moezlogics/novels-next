@@ -22,6 +22,8 @@ function RelCard({ p }: { p: { id: number; title: string; slug: string; image: s
   );
 }
 
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" });
+
 export default async function NovelView({ novel: n, comments }: { novel: NovelDetail; comments: CommentView[] }) {
   const base = siteUrl();
   const s = await getSettings();
@@ -94,6 +96,16 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
                   </a>
                 </span>
               ) : null}
+              <span className="sp-meta-item">
+                <i className="fa-regular fa-calendar" style={{ width: "0.75rem", height: "0.75rem" }}></i>
+                {n.updated_at.slice(0, 10) > n.posted_date.slice(0, 10) ? (
+                  <>
+                    Updated <time dateTime={n.updated_at}>{fmtDate(n.updated_at)}</time>
+                  </>
+                ) : (
+                  <time dateTime={n.posted_date}>{fmtDate(n.posted_date)}</time>
+                )}
+              </span>
               {n.pages ? (
                 <span className="sp-meta-item">
                   <i className="fa-regular fa-file-lines" style={{ width: "0.75rem", height: "0.75rem" }}></i>

@@ -63,6 +63,19 @@ export const getCarouselCategories = unstable_cache(
   TAGS,
 );
 
+export const getCarouselWriters = unstable_cache(
+  async () => {
+    const ids = await (await col.posts()).distinct("writer_id", { status: "active" });
+    const rows = await (await col.writers())
+      .find({ _id: { $in: ids.filter((x): x is number => typeof x === "number") } }, { projection: { name: 1, slug: 1, profile_pic: 1 } })
+      .toArray();
+    rows.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+    return rows.map((w) => ({ id: w._id, name: w.name, slug: w.slug, image: w.profile_pic && !/default/i.test(w.profile_pic) ? w.profile_pic : "" }));
+  },
+  ["carousel-writers"],
+  TAGS,
+);
+
 export const getRecentPosts = unstable_cache(
   async (limit: number = 8) => {
     const rows = await (await col.posts()).find({ status: "active" }, { projection: CARD_PROJ }).sort({ _id: -1 }).limit(limit).toArray();

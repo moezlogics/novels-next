@@ -88,7 +88,6 @@ export const SETTINGS_TABS: Tab[] = [
           { k: "homepage_description", label: "Homepage meta description", type: "textarea", rows: 3, max: 1000, help: "Best between 120 and 160 characters." },
           { k: "seo_description", label: "Default meta description (pages without their own)", type: "textarea", rows: 3, max: 1000 },
           { k: "seo_keywords", label: "Keywords", max: 1000 },
-          { k: "homepage_featured_image", label: "Default share image (WhatsApp / Facebook, 1200×630)", type: "image" },
         ],
       },
       {

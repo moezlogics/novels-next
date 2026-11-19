@@ -30,6 +30,7 @@ export async function savePageContent(fd: FormData) {
   };
   const p: Record<string, string> = {};
   for (const k of keys[tab] || []) p[k] = str(fd, k);
+  if (tab === "home") p.homepage_featured_image = await imageFrom(fd, "homepage_featured_image", "homepage");
   await patch(p as Partial<Settings>);
   back(`/newlogin/page-content/?tab=${tab}`, "Content saved ✓");
 }

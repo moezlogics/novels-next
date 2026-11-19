@@ -5,6 +5,7 @@ import HtmlShell from "@/components/HtmlShell";
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import MobileNav from "@/components/site/MobileNav";
+import { getCarouselCategories } from "@/lib/data";
 import { getSettings } from "@/lib/settings";
 
 export default async function CommunityLayout({ children }: { children: ReactNode }) {
@@ -14,7 +15,7 @@ export default async function CommunityLayout({ children }: { children: ReactNod
       <Header />
       <main id="app-container">{children}</main>
       <Footer />
-      <MobileNav community={!s.community_coming_soon} shop={!s.shop_coming_soon} />
+      <MobileNav community={!s.community_coming_soon} shop={!s.shop_coming_soon} cats={(await getCarouselCategories()).map((c) => ({ name: c.name, slug: c.slug }))} />
     </HtmlShell>
   );
 }
