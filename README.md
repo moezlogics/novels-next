@@ -112,24 +112,30 @@ npm run migrate
 npm run build
 ```
 
-4. Run with PM2 (keeps it alive and restarts after reboot):
+4. Run with PM2 (keeps it alive and restarts it if it stops). The settings are in `ecosystem.config.js` (app name `kitabnagricompk`, port 3115):
 
 ```bash
-npx pm2 start npm --name kitabnagri -- start
+pm2 start ecosystem.config.js
 ```
 
 ```bash
-npx pm2 save
+pm2 save
 ```
 
-5. Point Nginx at port 3000:
+After every new `npm run build`:
+
+```bash
+pm2 reload kitabnagricompk
+```
+
+5. Point Nginx at port 3115 (CloudPanel: the Node.js site's app port):
 
 ```nginx
 server {
     server_name kitabnagri.com.pk www.kitabnagri.com.pk;
     client_max_body_size 64m;
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3115;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
