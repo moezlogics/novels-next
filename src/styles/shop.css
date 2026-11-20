@@ -107,7 +107,7 @@ body.page-shop-app .site-footer {
 }
 .shop-card-image-wrap {
     width: 100%;
-    aspect-ratio: 1 / 1.35;
+    aspect-ratio: 4 / 5;
     background: #f4f4f5;
     overflow: hidden;
     position: relative;
@@ -262,7 +262,7 @@ body.page-shop-app .site-footer {
 }
 .sp-details-image {
     width: 100%;
-    aspect-ratio: 1 / 1.45;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
     background: #f4f4f5;
     border-radius: 6px;

@@ -108,7 +108,7 @@ export function ProductGallery({ title, image, gallery, video }: { title: string
     setActive(i);
     if (vid.current) i === slides.length ? vid.current.play().catch(() => {}) : vid.current.pause();
   };
-  const slideStyle: React.CSSProperties = { flex: "0 0 100%", width: "100%", scrollSnapAlign: "start", position: "relative", aspectRatio: "1 / 1.45", overflow: "hidden", borderRadius: 6, border: "1px solid var(--shop-border)", boxSizing: "border-box" };
+  const slideStyle: React.CSSProperties = { flex: "0 0 100%", width: "100%", scrollSnapAlign: "start", position: "relative", aspectRatio: "4 / 5", overflow: "hidden", borderRadius: 6, border: "1px solid var(--shop-border)", boxSizing: "border-box" };
   return (
     <div className="sp-details-image-wrap">
       <div

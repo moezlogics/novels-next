@@ -15,7 +15,7 @@ function RelCard({ p }: { p: { id: number; title: string; slug: string; image: s
     <Link className="sp-rel-card" href={`/${p.slug}/`}>
       <span className="sp-rel-cover">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.image ? thumbUrl(p.image, 200) : placeholderCover(p.title)} alt={`${p.title} novel cover`} loading="lazy" decoding="async" width={120} height={180} />
+        <img src={p.image ? thumbUrl(p.image, 200) : placeholderCover(p.title)} alt={`${p.title} novel cover`} loading="lazy" decoding="async" width={120} height={150} />
       </span>
       <span className="sp-rel-title">{p.title}</span>
     </Link>
@@ -63,7 +63,7 @@ export default async function NovelView({ novel: n, comments }: { novel: NovelDe
         <div className="sp-hero">
           <div className="sp-hero-img">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={cover} alt={n.title} fetchPriority="high" loading="eager" decoding="async" width={260} height={390} />
+            <img src={cover} alt={n.title} fetchPriority="high" loading="eager" decoding="async" width={260} height={325} />
             {showShop ? (
               <div className="sp-buy-now-wrap">
                 <Link href={`/shop/${n.product!.slug}/`} className="sp-buy-now-btn" rel="nofollow">
