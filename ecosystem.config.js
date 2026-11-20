@@ -6,7 +6,7 @@
 module.exports = {
   apps: [
     {
-      name: "kitabnagri",
+      name: "kitabnagricompk",
       cwd: __dirname,
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3000",
