@@ -115,14 +115,21 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 9px 0;
+    padding: 9px 12px;
     border-radius: 8px;
     font-size: 0.98rem;
     font-weight: 700;
     text-decoration: none;
+    white-space: nowrap;
     transition: opacity 0.15s, transform 0.15s;
     border: none;
     cursor: pointer;
+}
+.sp-btn .dl-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 @media (max-width: 500px) {
     .sp-actions-wrap {
@@ -130,8 +137,8 @@
         margin-top: 12px;
     }
     .sp-btn {
-        padding: 8px 0 !important;
-        font-size: 0.9rem !important;
+        padding: 8px 10px !important;
+        font-size: 0.86rem !important;
         gap: 6px !important;
     }
 }
@@ -150,8 +157,8 @@
     overflow: hidden;
     pointer-events: none;
     background: #f8fafc !important;
-    color: #64748b !important;
-    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
 }
 .sp-btn-dl.is-downloading::after {
     content: '';
@@ -161,7 +168,7 @@
     width: var(--download-progress, 0%);
     height: 3px;
     background-color: var(--theme-secondary);
-    transition: width 0.1s ease-out;
+    transition: width 0.85s linear;
 }
 
 /* â”€â”€ Specs Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

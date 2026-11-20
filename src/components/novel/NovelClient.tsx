@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Ico from "../Icons";
-import { downloadDrive, pdfFilename, type DlProgress } from "@/lib/driveDownload";
+import { downloadDrive, pdfFilename } from "@/lib/driveDownload";
 import { bumpAffinity } from "@/lib/readerStore";
 import { readerCommand, type DlInfo, type ReaderSpec } from "@/lib/readerBus";
 
@@ -108,60 +108,62 @@ export function EpisodeList({ pid, title, cover, episodes, dl, downloads = true 
   );
 }
 
-const mb = (b: number) => (b / 1048576).toFixed(b > 10485760 ? 0 : 1);
+const DL_COUNTDOWN = 5;
 
 export function DownloadButton({ pid, driveId, title, dl }: { pid: number; driveId: string; title: string; dl?: DlInfo }) {
-  const [state, setState] = useState<"" | "starting" | "loading" | "waiting" | "done" | "error">("");
-  const [prog, setProg] = useState<DlProgress | null>(null);
+  const [state, setState] = useState<"" | "counting" | "downloading" | "error">("");
+  const [secs, setSecs] = useState(DL_COUNTDOWN);
+
+  useEffect(() => {
+    if (state === "counting") {
+      if (secs <= 0) {
+        setState("downloading");
+        return;
+      }
+      const t = setTimeout(() => setSecs((s) => s - 1), 1000);
+      return () => clearTimeout(t);
+    }
+    if (state === "downloading") {
+      const t = setTimeout(() => setState(""), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [state, secs]);
+
   const start = async () => {
-    if (state && state !== "done" && state !== "error") return;
-    setState("starting");
-    setProg(null);
+    if (state === "counting" || state === "downloading") return;
+    setSecs(DL_COUNTDOWN);
+    setState("counting");
     fetch("/api/track/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: pid, ev: "download" }), keepalive: true }).catch(() => {});
     try {
-      const how = await downloadDrive({
+      await downloadDrive({
         driveId,
         apiKey: dl?.apiKey,
         size: dl?.size,
         filename: pdfFilename(title, dl?.site || ""),
-        onProgress: (p) => {
-          setState("loading");
-          setProg(p);
-        },
       });
-      if (how === "browser") {
-        // Google prepares big files before sending them; tell the reader instead of looking stuck
-        setState("waiting");
-        setTimeout(() => setState((s) => (s === "waiting" ? "" : s)), 15000);
-      } else {
-        setState("done");
-        setTimeout(() => setState((s) => (s === "done" ? "" : s)), 5000);
-      }
     } catch {
       setState("error");
     }
   };
-  const pct = prog && prog.total ? Math.min(100, Math.round((prog.loaded / prog.total) * 100)) : 0;
+
+  const active = state === "counting" || state === "downloading";
+  const pct = state === "counting" ? Math.round(((DL_COUNTDOWN - secs + 1) / (DL_COUNTDOWN + 1)) * 100) : state === "downloading" ? 100 : 0;
   const text =
-    state === "starting"
-      ? "Starting download…"
-      : state === "loading"
-        ? prog?.total
-          ? `Downloading ${pct}% · ${mb(prog.loaded)} / ${mb(prog.total)} MB`
-          : `Downloading… ${mb(prog?.loaded || 0)} MB`
-        : state === "waiting"
-          ? "Google Drive is preparing your file (5–15 seconds)…"
-          : state === "done"
-            ? "Downloaded ✓ Check your Downloads"
-            : state === "error"
-              ? "Download failed. Tap to try again"
-              : `Download Free${dl?.size ? ` (${mb(dl.size)} MB)` : ""}`;
+    state === "counting"
+      ? `Starting in ${secs}s…`
+      : state === "downloading"
+        ? "Downloading…"
+        : state === "error"
+          ? "Tap to try again"
+          : "Download Free";
+
   return (
     <button
       type="button"
-      className={`sp-btn sp-btn-dl${state === "starting" || state === "loading" ? " is-downloading" : ""}`}
+      className={`sp-btn sp-btn-dl${active ? " is-downloading" : ""}`}
       style={{ "--download-progress": `${pct}%` } as React.CSSProperties}
       onClick={start}
+      disabled={active}
       aria-live="polite"
     >
       <Ico name="download" /> <span className="dl-text">{text}</span>
